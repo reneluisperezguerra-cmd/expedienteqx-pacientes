@@ -2,8 +2,8 @@ const CACHE_NAME = 'expedienteqx-pacientes-v1';
 const ASSETS = [
   './registro-pacientes.html',
   './manifest.json',
-  './icon-192.png',
-  './icon-512.png'
+  './icono-192.png',
+  './icono-512.png'
 ];
 
 self.addEventListener('install', (event) => {

@@ -12,6 +12,7 @@
 <link rel="apple-touch-icon" href="icono-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
   :root{
     --green-950:#0d2a1d;
@@ -373,6 +374,40 @@
   }
   .score-radio-group input{width:auto; margin-top:3px;}
   .score-radio-group b{font-weight:600;}
+
+  /* ---------- OCR / cámara ---------- */
+  .field-ocr-header{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:space-between;
+    align-items:center;
+    gap:6px 8px;
+    margin-bottom:5px;
+  }
+  .field-ocr-header label:first-child{margin-right:auto;}
+  .field-ocr-header label{margin:0;}
+  .ocr-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    font-size:12px;
+    font-weight:600;
+    color:var(--green-900);
+    background:var(--gold-100);
+    border:1px solid var(--gold-500);
+    padding:4px 9px;
+    border-radius:6px;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .ocr-btn:active{background:var(--gold-500); color:#fff;}
+  .ocr-status{
+    font-size:11.5px;
+    color:var(--ink-soft);
+    min-height:14px;
+    margin-top:4px;
+    font-style:italic;
+  }
 </style>
 </head>
 <body>
@@ -480,9 +515,33 @@
                 <option>Militar</option>
               </select>
             </div>
+            <div>
+              <div class="field-ocr-header">
+                <label>Carnet de identidad</label>
+                <label class="ocr-btn" for="ocr_carnet">📷 Escanear</label>
+                <label class="ocr-btn" for="upload_carnet">📁 Subir foto</label>
+              </div>
+              <input type="text" id="f_carnet" placeholder="No. de identidad" inputmode="numeric">
+              <input type="file" accept="image/*" capture="environment" id="ocr_carnet" class="ocr-input" data-target="f_carnet" hidden>
+              <input type="file" accept="image/*" id="upload_carnet" class="ocr-input" data-target="f_carnet" hidden>
+              <div class="ocr-status" id="ocrstatus_f_carnet"></div>
+            </div>
             <div id="wrap_rango" style="display:none;">
               <label>Rango militar</label>
               <input type="text" id="f_rango" placeholder="Ej. Capitán, Sargento…">
+            </div>
+          </div>
+          <div class="form-grid full" style="margin-top:12px;">
+            <div>
+              <div class="field-ocr-header">
+                <label>Dirección particular</label>
+                <label class="ocr-btn" for="ocr_direccion">📷 Escanear</label>
+                <label class="ocr-btn" for="upload_direccion">📁 Subir foto</label>
+              </div>
+              <textarea id="f_direccion"></textarea>
+              <input type="file" accept="image/*" capture="environment" id="ocr_direccion" class="ocr-input" data-target="f_direccion" hidden>
+              <input type="file" accept="image/*" id="upload_direccion" class="ocr-input" data-target="f_direccion" hidden>
+              <div class="ocr-status" id="ocrstatus_f_direccion"></div>
             </div>
           </div>
           <div style="margin-top:14px;">
@@ -513,6 +572,68 @@
             </div>
           </div>
           <div class="form-grid full" style="margin-top:12px;">
+            <div>
+              <div class="field-ocr-header">
+                <label>Síntomas</label>
+                <label class="ocr-btn" for="ocr_sintomas">📷 Escanear</label>
+              </div>
+              <textarea id="f_sintomas"></textarea>
+              <input type="file" accept="image/*" capture="environment" id="ocr_sintomas" class="ocr-input" data-target="f_sintomas" hidden>
+              <div class="ocr-status" id="ocrstatus_f_sintomas"></div>
+            </div>
+            <div>
+              <div class="field-ocr-header">
+                <label>Signos</label>
+                <label class="ocr-btn" for="ocr_signos">📷 Escanear</label>
+              </div>
+              <textarea id="f_signos"></textarea>
+              <input type="file" accept="image/*" capture="environment" id="ocr_signos" class="ocr-input" data-target="f_signos" hidden>
+              <div class="ocr-status" id="ocrstatus_f_signos"></div>
+            </div>
+            <div>
+              <div class="field-ocr-header">
+                <label>Complementarios realizados — de urgencia</label>
+                <label class="ocr-btn" for="ocr_compUrg">📷 Escanear</label>
+                <label class="ocr-btn" for="upload_compUrg">📁 Subir foto</label>
+              </div>
+              <textarea id="f_compUrg"></textarea>
+              <input type="file" accept="image/*" capture="environment" id="ocr_compUrg" class="ocr-input" data-target="f_compUrg" hidden>
+              <input type="file" accept="image/*" id="upload_compUrg" class="ocr-input" data-target="f_compUrg" hidden>
+              <div class="ocr-status" id="ocrstatus_f_compUrg"></div>
+            </div>
+            <div>
+              <div class="field-ocr-header">
+                <label>Complementarios realizados — de forma electiva</label>
+                <label class="ocr-btn" for="ocr_compElec">📷 Escanear</label>
+                <label class="ocr-btn" for="upload_compElec">📁 Subir foto</label>
+              </div>
+              <textarea id="f_compElec"></textarea>
+              <input type="file" accept="image/*" capture="environment" id="ocr_compElec" class="ocr-input" data-target="f_compElec" hidden>
+              <input type="file" accept="image/*" id="upload_compElec" class="ocr-input" data-target="f_compElec" hidden>
+              <div class="ocr-status" id="ocrstatus_f_compElec"></div>
+            </div>
+            <div>
+              <div class="field-ocr-header">
+                <label>Valoraciones por otras especialidades</label>
+                <label class="ocr-btn" for="ocr_valoraciones">📷 Escanear</label>
+                <label class="ocr-btn" for="upload_valoraciones">📁 Subir foto</label>
+              </div>
+              <textarea id="f_valoraciones"></textarea>
+              <input type="file" accept="image/*" capture="environment" id="ocr_valoraciones" class="ocr-input" data-target="f_valoraciones" hidden>
+              <input type="file" accept="image/*" id="upload_valoraciones" class="ocr-input" data-target="f_valoraciones" hidden>
+              <div class="ocr-status" id="ocrstatus_f_valoraciones"></div>
+            </div>
+            <div>
+              <div class="field-ocr-header">
+                <label>Chequeo anestésico</label>
+                <label class="ocr-btn" for="ocr_chequeoAnestesico">📷 Escanear</label>
+                <label class="ocr-btn" for="upload_chequeoAnestesico">📁 Subir foto</label>
+              </div>
+              <textarea id="f_chequeoAnestesico"></textarea>
+              <input type="file" accept="image/*" capture="environment" id="ocr_chequeoAnestesico" class="ocr-input" data-target="f_chequeoAnestesico" hidden>
+              <input type="file" accept="image/*" id="upload_chequeoAnestesico" class="ocr-input" data-target="f_chequeoAnestesico" hidden>
+              <div class="ocr-status" id="ocrstatus_f_chequeoAnestesico"></div>
+            </div>
             <div><label>Comorbilidades</label><textarea id="f_comorbilidades"></textarea></div>
             <div><label>Tratamiento de las comorbilidades</label><textarea id="f_tratComorbilidades"></textarea></div>
             <div><label>Tratamiento inicial</label><textarea id="f_tratInicial"></textarea></div>
@@ -857,6 +978,8 @@ function rowToPatient(r){
     nombre: r.nombre,
     hc: r.numero_historia_clinica,
     telefono: r.telefono,
+    carnet: r.carnet_identidad,
+    direccion: r.direccion,
     edad: r.edad,
     sexo: r.sexo,
     raza: r.raza,
@@ -866,6 +989,12 @@ function rowToPatient(r){
     diagnostico: r.diagnostico,
     fechaConsulta: r.fecha_consulta,
     asa: r.asa,
+    sintomas: r.sintomas,
+    signos: r.signos,
+    compUrg: r.complementarios_urgencia,
+    compElec: r.complementarios_electivos,
+    valoraciones: r.valoraciones_especialidades,
+    chequeoAnestesico: r.chequeo_anestesico,
     comorbilidades: r.comorbilidades,
     tratComorbilidades: r.trat_comorbilidades,
     tratInicial: r.trat_inicial,
@@ -889,6 +1018,8 @@ function patientToRow(p){
     nombre: p.nombre,
     numero_historia_clinica: p.hc || null,
     telefono: p.telefono || null,
+    carnet_identidad: p.carnet || null,
+    direccion: p.direccion || null,
     edad: p.edad ? parseInt(p.edad) : null,
     sexo: p.sexo || null,
     raza: p.raza || null,
@@ -898,6 +1029,12 @@ function patientToRow(p){
     diagnostico: p.diagnostico || null,
     fecha_consulta: p.fechaConsulta || null,
     asa: p.asa || null,
+    sintomas: p.sintomas || null,
+    signos: p.signos || null,
+    complementarios_urgencia: p.compUrg || null,
+    complementarios_electivos: p.compElec || null,
+    valoraciones_especialidades: p.valoraciones || null,
+    chequeo_anestesico: p.chequeoAnestesico || null,
     comorbilidades: p.comorbilidades || null,
     trat_comorbilidades: p.tratComorbilidades || null,
     trat_inicial: p.tratInicial || null,
@@ -933,6 +1070,42 @@ function updateScoreVisibility(){
   document.getElementById('scoreHint').style.display = (showAlvarado || showMPI || showParkland || showBjork) ? 'none' : 'block';
 }
 document.getElementById('f_diagnostico').addEventListener('input', updateScoreVisibility);
+
+// ---- Escaneo de fotos a texto (OCR) ----
+let ocrWorker = null;
+async function getOcrWorker(){
+  if(!ocrWorker){
+    ocrWorker = await Tesseract.createWorker('spa');
+  }
+  return ocrWorker;
+}
+
+document.querySelectorAll('.ocr-input').forEach(input => {
+  input.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    const targetId = input.dataset.target;
+    const field = document.getElementById(targetId);
+    const statusEl = document.getElementById('ocrstatus_' + targetId);
+    if(statusEl) statusEl.textContent = '🔎 Leyendo la foto… puede tardar unos segundos.';
+
+    try{
+      const worker = await getOcrWorker();
+      const { data: { text } } = await worker.recognize(file);
+      const limpio = text.trim();
+      if(!limpio){
+        if(statusEl) statusEl.textContent = 'No se detectó texto legible en la foto. Puedes escribirlo a mano.';
+      } else {
+        field.value = field.value ? (field.value.trim() + '\n' + limpio) : limpio;
+        if(statusEl) statusEl.textContent = '✓ Texto agregado — revísalo, el escaneo puede tener errores.';
+      }
+    } catch(err){
+      if(statusEl) statusEl.textContent = 'No se pudo leer la foto (revisa tu conexión e inténtalo de nuevo).';
+    } finally {
+      input.value = ''; // permite volver a tomar otra foto para el mismo campo
+    }
+  });
+});
 
 function calcAlvarado(){
   let total = 0;
@@ -1047,12 +1220,26 @@ function render(){
           <div class="detail-section">
             <h4>Datos generales</h4>
             ${field('No. historia clínica', p.hc)}
+            ${field('Carnet de identidad', p.carnet)}
             ${field('Teléfono', p.telefono)}
+            ${field('Dirección', p.direccion)}
             ${field('Raza', p.raza)}
             ${field('Categoría', p.categoria)}
             ${p.categoria === 'Militar' ? field('Rango', p.rango) : ''}
             ${field('Fecha 1ra consulta', fmtDate(p.fechaConsulta))}
             ${field('Índice ASA', p.asa)}
+          </div>
+          <div class="detail-section">
+            <h4>Cuadro clínico</h4>
+            ${field('Síntomas', p.sintomas)}
+            ${field('Signos', p.signos)}
+          </div>
+          <div class="detail-section">
+            <h4>Complementarios y valoraciones</h4>
+            ${field('Complementarios de urgencia', p.compUrg)}
+            ${field('Complementarios electivos', p.compElec)}
+            ${field('Valoraciones por otras especialidades', p.valoraciones)}
+            ${field('Chequeo anestésico', p.chequeoAnestesico)}
           </div>
           <div class="detail-section">
             <h4>Comorbilidades</h4>
@@ -1132,6 +1319,7 @@ function closeModal(){
   document.getElementById('wrap_rango').style.display = 'none';
   resetScores();
   updateScoreVisibility();
+  document.querySelectorAll('.ocr-status').forEach(el => el.textContent = '');
   editingId = null;
   document.getElementById('modalTitle').textContent = 'Nuevo paciente';
 }
@@ -1148,6 +1336,8 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     nombre,
     hc: document.getElementById('f_hc').value,
     telefono: document.getElementById('f_telefono').value,
+    carnet: document.getElementById('f_carnet').value,
+    direccion: document.getElementById('f_direccion').value,
     edad: document.getElementById('f_edad').value,
     sexo: document.getElementById('f_sexo').value,
     raza: document.getElementById('f_raza').value,
@@ -1157,6 +1347,12 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     diagnostico: document.getElementById('f_diagnostico').value,
     fechaConsulta: document.getElementById('f_fechaConsulta').value,
     asa: document.getElementById('f_asa').value,
+    sintomas: document.getElementById('f_sintomas').value,
+    signos: document.getElementById('f_signos').value,
+    compUrg: document.getElementById('f_compUrg').value,
+    compElec: document.getElementById('f_compElec').value,
+    valoraciones: document.getElementById('f_valoraciones').value,
+    chequeoAnestesico: document.getElementById('f_chequeoAnestesico').value,
     comorbilidades: document.getElementById('f_comorbilidades').value,
     tratComorbilidades: document.getElementById('f_tratComorbilidades').value,
     tratInicial: document.getElementById('f_tratInicial').value,
@@ -1224,6 +1420,8 @@ function editPatient(id){
   document.getElementById('f_nombre').value = p.nombre || '';
   document.getElementById('f_hc').value = p.hc || '';
   document.getElementById('f_telefono').value = p.telefono || '';
+  document.getElementById('f_carnet').value = p.carnet || '';
+  document.getElementById('f_direccion').value = p.direccion || '';
   document.getElementById('f_edad').value = p.edad || '';
   document.getElementById('f_sexo').value = p.sexo || '';
   document.getElementById('f_raza').value = p.raza || '';
@@ -1235,6 +1433,12 @@ function editPatient(id){
   updateScoreVisibility();
   document.getElementById('f_fechaConsulta').value = p.fechaConsulta || '';
   document.getElementById('f_asa').value = p.asa || '';
+  document.getElementById('f_sintomas').value = p.sintomas || '';
+  document.getElementById('f_signos').value = p.signos || '';
+  document.getElementById('f_compUrg').value = p.compUrg || '';
+  document.getElementById('f_compElec').value = p.compElec || '';
+  document.getElementById('f_valoraciones').value = p.valoraciones || '';
+  document.getElementById('f_chequeoAnestesico').value = p.chequeoAnestesico || '';
   document.getElementById('f_comorbilidades').value = p.comorbilidades || '';
   document.getElementById('f_tratComorbilidades').value = p.tratComorbilidades || '';
   document.getElementById('f_tratInicial').value = p.tratInicial || '';
@@ -1286,8 +1490,8 @@ async function deletePatient(id){
 
 // ---- CSV export ----
 document.getElementById('exportBtn').addEventListener('click', () => {
-  const headers = ['Nombre','No. historia clínica','Teléfono','Edad','Sexo','Raza','Categoría','Rango militar','Tipo','Diagnóstico','Fecha 1ra consulta','ASA','Comorbilidades','Tratamiento comorbilidades','Tratamiento inicial','Pendientes','Tratamiento propuesto','Fecha cirugía','Hallazgo operatorio','Técnica quirúrgica','Complicaciones','Tratamiento complicaciones','Estadía (días)','Estado','Tratamiento posoperatorio','Seguimiento'];
-  const rows = pacientes.map(p => [p.nombre,p.hc,p.telefono,p.edad,p.sexo,p.raza,p.categoria,p.rango,p.tipo,p.diagnostico,p.fechaConsulta,p.asa,p.comorbilidades,p.tratComorbilidades,p.tratInicial,p.pendientes,p.tratPropuesto,p.fechaCirugia,p.hallazgo,p.tecnica,p.complicaciones,p.tratComplicaciones,p.estadia,p.estado,p.tratPosop,p.seguimiento]);
+  const headers = ['Nombre','No. historia clínica','Carnet de identidad','Teléfono','Dirección','Edad','Sexo','Raza','Categoría','Rango militar','Tipo','Diagnóstico','Fecha 1ra consulta','ASA','Síntomas','Signos','Complementarios urgencia','Complementarios electivos','Valoraciones especialidades','Chequeo anestésico','Comorbilidades','Tratamiento comorbilidades','Tratamiento inicial','Pendientes','Tratamiento propuesto','Fecha cirugía','Hallazgo operatorio','Técnica quirúrgica','Complicaciones','Tratamiento complicaciones','Estadía (días)','Estado','Tratamiento posoperatorio','Seguimiento'];
+  const rows = pacientes.map(p => [p.nombre,p.hc,p.carnet,p.telefono,p.direccion,p.edad,p.sexo,p.raza,p.categoria,p.rango,p.tipo,p.diagnostico,p.fechaConsulta,p.asa,p.sintomas,p.signos,p.compUrg,p.compElec,p.valoraciones,p.chequeoAnestesico,p.comorbilidades,p.tratComorbilidades,p.tratInicial,p.pendientes,p.tratPropuesto,p.fechaCirugia,p.hallazgo,p.tecnica,p.complicaciones,p.tratComplicaciones,p.estadia,p.estado,p.tratPosop,p.seguimiento]);
   const csv = [headers, ...rows].map(r => r.map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);

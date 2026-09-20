@@ -12,7 +12,6 @@
 <link rel="apple-touch-icon" href="icono-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
   :root{
     --green-950:#0d2a1d;
@@ -90,6 +89,7 @@
   }
   .tabs{
     display:flex;
+    flex-wrap:wrap;
     gap:6px;
     background:var(--paper);
     border:1px solid var(--line);
@@ -189,6 +189,7 @@
   }
   .badge-urg{background:var(--gold-100); color:var(--gold-600);}
   .badge-elec{background:var(--green-bg); color:var(--green-ink);}
+  .badge-pendiente{background:#fdf1d6; color:#8a5a00;}
   .badge-vivo{background:var(--green-bg); color:var(--green-ink);}
   .badge-fallecido{background:var(--red-bg); color:var(--red-ink);}
   .chevron{transition:transform .15s ease; color:var(--ink-soft);}
@@ -408,6 +409,86 @@
     margin-top:4px;
     font-style:italic;
   }
+  .photo-strip{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:8px;
+  }
+  .photo-thumb-wrap{
+    position:relative;
+    width:72px;
+    height:72px;
+  }
+  .photo-thumb{
+    width:72px;
+    height:72px;
+    object-fit:cover;
+    border-radius:8px;
+    border:1px solid var(--line);
+    background:var(--paper-tint);
+    cursor:pointer;
+  }
+  .photo-thumb-remove{
+    position:absolute;
+    top:-6px;
+    right:-6px;
+    width:20px;
+    height:20px;
+    border-radius:50%;
+    background:var(--red-ink);
+    color:#fff;
+    border:2px solid #fff;
+    font-size:12px;
+    line-height:1;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:2;
+  }
+  .photo-thumb-toggle{
+    position:absolute;
+    top:-6px;
+    left:-6px;
+    width:22px;
+    height:22px;
+    border-radius:50%;
+    background:var(--gold-500);
+    color:#fff;
+    border:2px solid #fff;
+    font-size:11px;
+    line-height:1;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:2;
+  }
+  .photo-thumb-ocr{
+    position:absolute;
+    bottom:-6px;
+    right:-6px;
+    width:22px;
+    height:22px;
+    border-radius:50%;
+    background:var(--green-800);
+    color:#fff;
+    border:2px solid #fff;
+    font-size:11px;
+    line-height:1;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:2;
+  }
+  .photo-thumb-uploading{
+    width:64px; height:64px; border-radius:8px;
+    border:1px dashed var(--line);
+    display:flex; align-items:center; justify-content:center;
+    font-size:10px; color:var(--ink-soft); text-align:center;
+  }
 </style>
 </head>
 <body>
@@ -451,12 +532,19 @@
   <div class="toolbar">
     <div class="tabs" id="tabs">
       <button class="tab-btn active" data-filter="todos">Todos <span class="tab-count" id="count-todos">0</span></button>
-      <button class="tab-btn" data-filter="urgencia">Urgencia <span class="tab-count" id="count-urgencia">0</span></button>
-      <button class="tab-btn" data-filter="electiva">Electiva <span class="tab-count" id="count-electiva">0</span></button>
+      <button class="tab-btn" data-filter="pendiente">Pendientes a cirugía <span class="tab-count" id="count-pendiente">0</span></button>
+      <button class="tab-btn" data-filter="urgencia">Operados · Urgencia <span class="tab-count" id="count-urgencia">0</span></button>
+      <button class="tab-btn" data-filter="electiva">Operados · Electiva <span class="tab-count" id="count-electiva">0</span></button>
     </div>
     <div class="actions">
+      <select class="search-input" id="cirujanoFilter" style="min-width:170px;">
+        <option value="">Cirujano: Todos</option>
+        <option value="Dr. René Luis Pérez Guerra">Dr. René Luis Pérez Guerra</option>
+        <option value="Dra. Lis de Cañas Cabrales">Dra. Lis de Cañas Cabrales</option>
+      </select>
       <input type="text" class="search-input" id="searchInput" placeholder="Buscar por nombre, HC o diagnóstico…">
       <button class="ghost" id="exportBtn">Exportar CSV</button>
+      <button class="ghost" id="downloadPhotosBtn">📥 Descargar fotos p/ uso sin conexión</button>
       <button class="primary" id="newPatientBtn">+ Nuevo paciente</button>
     </div>
   </div>
@@ -516,15 +604,8 @@
               </select>
             </div>
             <div>
-              <div class="field-ocr-header">
-                <label>Carnet de identidad</label>
-                <label class="ocr-btn" for="ocr_carnet">📷 Escanear</label>
-                <label class="ocr-btn" for="upload_carnet">📁 Subir foto</label>
-              </div>
+              <label>Carnet de identidad</label>
               <input type="text" id="f_carnet" placeholder="No. de identidad" inputmode="numeric">
-              <input type="file" accept="image/*" capture="environment" id="ocr_carnet" class="ocr-input" data-target="f_carnet" hidden>
-              <input type="file" accept="image/*" id="upload_carnet" class="ocr-input" data-target="f_carnet" hidden>
-              <div class="ocr-status" id="ocrstatus_f_carnet"></div>
             </div>
             <div id="wrap_rango" style="display:none;">
               <label>Rango militar</label>
@@ -533,16 +614,17 @@
           </div>
           <div class="form-grid full" style="margin-top:12px;">
             <div>
-              <div class="field-ocr-header">
-                <label>Dirección particular</label>
-                <label class="ocr-btn" for="ocr_direccion">📷 Escanear</label>
-                <label class="ocr-btn" for="upload_direccion">📁 Subir foto</label>
-              </div>
+              <label>Dirección particular</label>
               <textarea id="f_direccion"></textarea>
-              <input type="file" accept="image/*" capture="environment" id="ocr_direccion" class="ocr-input" data-target="f_direccion" hidden>
-              <input type="file" accept="image/*" id="upload_direccion" class="ocr-input" data-target="f_direccion" hidden>
-              <div class="ocr-status" id="ocrstatus_f_direccion"></div>
             </div>
+          </div>
+          <div style="margin-top:14px;">
+            <label>Cirujano</label>
+            <select id="f_cirujano">
+              <option value="">—</option>
+              <option>Dr. René Luis Pérez Guerra</option>
+              <option>Dra. Lis de Cañas Cabrales</option>
+            </select>
           </div>
           <div style="margin-top:14px;">
             <label>Tipo de cirugía</label>
@@ -573,22 +655,12 @@
           </div>
           <div class="form-grid full" style="margin-top:12px;">
             <div>
-              <div class="field-ocr-header">
-                <label>Síntomas</label>
-                <label class="ocr-btn" for="ocr_sintomas">📷 Escanear</label>
-              </div>
+              <label>Síntomas</label>
               <textarea id="f_sintomas"></textarea>
-              <input type="file" accept="image/*" capture="environment" id="ocr_sintomas" class="ocr-input" data-target="f_sintomas" hidden>
-              <div class="ocr-status" id="ocrstatus_f_sintomas"></div>
             </div>
             <div>
-              <div class="field-ocr-header">
-                <label>Signos</label>
-                <label class="ocr-btn" for="ocr_signos">📷 Escanear</label>
-              </div>
+              <label>Signos</label>
               <textarea id="f_signos"></textarea>
-              <input type="file" accept="image/*" capture="environment" id="ocr_signos" class="ocr-input" data-target="f_signos" hidden>
-              <div class="ocr-status" id="ocrstatus_f_signos"></div>
             </div>
             <div>
               <div class="field-ocr-header">
@@ -596,10 +668,10 @@
                 <label class="ocr-btn" for="ocr_compUrg">📷 Escanear</label>
                 <label class="ocr-btn" for="upload_compUrg">📁 Subir foto</label>
               </div>
-              <textarea id="f_compUrg"></textarea>
               <input type="file" accept="image/*" capture="environment" id="ocr_compUrg" class="ocr-input" data-target="f_compUrg" hidden>
               <input type="file" accept="image/*" id="upload_compUrg" class="ocr-input" data-target="f_compUrg" hidden>
               <div class="ocr-status" id="ocrstatus_f_compUrg"></div>
+              <div class="photo-strip" id="photos_compUrg"></div>
             </div>
             <div>
               <div class="field-ocr-header">
@@ -607,10 +679,21 @@
                 <label class="ocr-btn" for="ocr_compElec">📷 Escanear</label>
                 <label class="ocr-btn" for="upload_compElec">📁 Subir foto</label>
               </div>
-              <textarea id="f_compElec"></textarea>
               <input type="file" accept="image/*" capture="environment" id="ocr_compElec" class="ocr-input" data-target="f_compElec" hidden>
               <input type="file" accept="image/*" id="upload_compElec" class="ocr-input" data-target="f_compElec" hidden>
               <div class="ocr-status" id="ocrstatus_f_compElec"></div>
+              <div class="photo-strip" id="photos_compElec"></div>
+            </div>
+            <div>
+              <div class="field-ocr-header">
+                <label>Complementarios de Imagen</label>
+                <label class="ocr-btn" for="ocr_compImagen">📷 Escanear</label>
+                <label class="ocr-btn" for="upload_compImagen">📁 Subir foto</label>
+              </div>
+              <input type="file" accept="image/*" capture="environment" id="ocr_compImagen" class="ocr-input" data-target="f_compImagen" hidden>
+              <input type="file" accept="image/*" id="upload_compImagen" class="ocr-input" data-target="f_compImagen" hidden>
+              <div class="ocr-status" id="ocrstatus_f_compImagen"></div>
+              <div class="photo-strip" id="photos_compImagen"></div>
             </div>
             <div>
               <div class="field-ocr-header">
@@ -618,10 +701,10 @@
                 <label class="ocr-btn" for="ocr_valoraciones">📷 Escanear</label>
                 <label class="ocr-btn" for="upload_valoraciones">📁 Subir foto</label>
               </div>
-              <textarea id="f_valoraciones"></textarea>
               <input type="file" accept="image/*" capture="environment" id="ocr_valoraciones" class="ocr-input" data-target="f_valoraciones" hidden>
               <input type="file" accept="image/*" id="upload_valoraciones" class="ocr-input" data-target="f_valoraciones" hidden>
               <div class="ocr-status" id="ocrstatus_f_valoraciones"></div>
+              <div class="photo-strip" id="photos_valoraciones"></div>
             </div>
             <div>
               <div class="field-ocr-header">
@@ -629,10 +712,10 @@
                 <label class="ocr-btn" for="ocr_chequeoAnestesico">📷 Escanear</label>
                 <label class="ocr-btn" for="upload_chequeoAnestesico">📁 Subir foto</label>
               </div>
-              <textarea id="f_chequeoAnestesico"></textarea>
               <input type="file" accept="image/*" capture="environment" id="ocr_chequeoAnestesico" class="ocr-input" data-target="f_chequeoAnestesico" hidden>
               <input type="file" accept="image/*" id="upload_chequeoAnestesico" class="ocr-input" data-target="f_chequeoAnestesico" hidden>
               <div class="ocr-status" id="ocrstatus_f_chequeoAnestesico"></div>
+              <div class="photo-strip" id="photos_chequeoAnestesico"></div>
             </div>
             <div><label>Comorbilidades</label><textarea id="f_comorbilidades"></textarea></div>
             <div><label>Tratamiento de las comorbilidades</label><textarea id="f_tratComorbilidades"></textarea></div>
@@ -726,12 +809,46 @@
         <div class="form-section">
           <h3>Cirugía</h3>
           <div class="form-grid">
-            <div><label>Fecha de cirugía</label><input type="date" id="f_fechaCirugia"></div>
+            <div><label>Fecha de cirugía (probable/planificada)</label><input type="date" id="f_fechaCirugia"></div>
             <div><label>Estadía hospitalaria (días)</label><input type="number" id="f_estadia" min="0"></div>
+          </div>
+          <div style="margin-top:14px;">
+            <label>Estado quirúrgico</label>
+            <div class="type-toggle">
+              <label><input type="radio" name="f_estadoQuirurgico" value="pendiente" checked> Pendiente</label>
+              <label><input type="radio" name="f_estadoQuirurgico" value="operado"> Operado</label>
+            </div>
+          </div>
+          <div class="form-grid" id="wrap_fechaOperacionReal" style="display:none; margin-top:12px;">
+            <div><label>Fecha de operación (real)</label><input type="date" id="f_fechaOperacionReal"></div>
           </div>
           <div class="form-grid full" style="margin-top:12px;">
             <div><label>Hallazgo operatorio</label><textarea id="f_hallazgo"></textarea></div>
             <div><label>Técnica quirúrgica empleada</label><textarea id="f_tecnica"></textarea></div>
+            <div>
+              <div class="field-ocr-header">
+                <label>Informe operatorio</label>
+                <label class="ocr-btn" for="ocr_informeOperatorio">📷 Escanear</label>
+                <label class="ocr-btn" for="upload_informeOperatorio">📁 Subir foto</label>
+              </div>
+              <textarea id="f_informeOperatorio"></textarea>
+              <input type="file" accept="image/*" capture="environment" id="ocr_informeOperatorio" class="ocr-input" data-target="f_informeOperatorio" hidden>
+              <input type="file" accept="image/*" id="upload_informeOperatorio" class="ocr-input" data-target="f_informeOperatorio" hidden>
+              <div class="ocr-status" id="ocrstatus_f_informeOperatorio"></div>
+              <div class="photo-strip" id="photos_informeOperatorio"></div>
+            </div>
+            <div>
+              <div class="field-ocr-header">
+                <label>Biopsias</label>
+                <label class="ocr-btn" for="ocr_biopsias">📷 Escanear</label>
+                <label class="ocr-btn" for="upload_biopsias">📁 Subir foto</label>
+              </div>
+              <textarea id="f_biopsias"></textarea>
+              <input type="file" accept="image/*" capture="environment" id="ocr_biopsias" class="ocr-input" data-target="f_biopsias" hidden>
+              <input type="file" accept="image/*" id="upload_biopsias" class="ocr-input" data-target="f_biopsias" hidden>
+              <div class="ocr-status" id="ocrstatus_f_biopsias"></div>
+              <div class="photo-strip" id="photos_biopsias"></div>
+            </div>
           </div>
         </div>
 
@@ -770,13 +887,21 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // ---- Instalar la app / trabajar sin conexión ----
 if('serviceWorker' in navigator){
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
+    navigator.serviceWorker.register('sw.js').then((reg) => {
+      reg.update();
+    }).catch(() => {});
+  });
+  let refreshingPage = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if(refreshingPage) return;
+    refreshingPage = true;
+    window.location.reload();
   });
 }
 
 // ---- IndexedDB: caché local + cola de cambios pendientes ----
 const DB_NAME = 'expedienteqx_db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 let dbPromise = null;
 
 function openDB(){
@@ -787,6 +912,7 @@ function openDB(){
       const db = e.target.result;
       if(!db.objectStoreNames.contains('pacientes')) db.createObjectStore('pacientes', { keyPath: 'id' });
       if(!db.objectStoreNames.contains('pending_ops')) db.createObjectStore('pending_ops', { keyPath: 'opId', autoIncrement: true });
+      if(!db.objectStoreNames.contains('photo_cache')) db.createObjectStore('photo_cache', { keyPath: 'path' });
     };
     req.onsuccess = (e) => resolve(e.target.result);
     req.onerror = (e) => reject(e.target.error);
@@ -887,6 +1013,296 @@ let pacientes = [];
 let editingId = null;
 let currentFilter = 'todos';
 let searchTerm = '';
+let cirujanoFilterValue = '';
+let currentPhotoOwnerId = null;
+
+const PHOTO_FIELDS = ['compUrg','compElec','compImagen','valoraciones','chequeoAnestesico','informeOperatorio','biopsias'];
+let formPhotos = {};
+function resetFormPhotos(){
+  formPhotos = {};
+  PHOTO_FIELDS.forEach(k => { formPhotos[k] = []; renderPhotoStrip(k); });
+}
+
+// Acepta tanto el formato antiguo (una ruta de texto) como el nuevo ({original, mejorada})
+function normalizePhotoEntry(raw){
+  if(typeof raw === 'string') return { original: raw, mejorada: null };
+  return { original: raw.original, mejorada: raw.mejorada || null };
+}
+
+function renderPhotoStrip(fieldKey){
+  const el = document.getElementById('photos_' + fieldKey);
+  if(!el) return;
+  el.innerHTML = formPhotos[fieldKey].map((p, i) => {
+    const usarMejorada = p.view !== 'original' && (p.mejorada || p.previewMejorada);
+    const path = usarMejorada ? p.mejorada : p.original;
+    const preview = usarMejorada ? p.previewMejorada : p.previewOriginal;
+    return `
+    <div class="photo-thumb-wrap">
+      <img class="photo-thumb" data-path="${path || ''}" src="${preview || ''}" onclick="viewPhotoEntry('${fieldKey}', ${i})">
+      ${p.mejorada || p.previewMejorada ? `<div class="photo-thumb-toggle" title="Ver ${usarMejorada ? 'original' : 'mejorada'}" onclick="event.stopPropagation(); togglePhotoView('${fieldKey}', ${i})">${usarMejorada ? '✨' : '📷'}</div>` : ''}
+      <div class="photo-thumb-remove" onclick="removePhoto('${fieldKey}', ${i})">×</div>
+    </div>
+  `;
+  }).join('');
+  hydratePhotoThumbnails(el);
+}
+
+function togglePhotoView(fieldKey, i){
+  const p = formPhotos[fieldKey][i];
+  p.view = (p.view === 'original') ? 'mejorada' : 'original';
+  renderPhotoStrip(fieldKey);
+}
+
+function removePhoto(fieldKey, index){
+  formPhotos[fieldKey].splice(index, 1);
+  renderPhotoStrip(fieldKey);
+}
+
+async function getCachedPhotoBlob(path){
+  try{
+    const db = await openDB();
+    return await new Promise((res) => {
+      const r = db.transaction('photo_cache', 'readonly').objectStore('photo_cache').get(path);
+      r.onsuccess = () => res(r.result ? r.result.blob : null);
+      r.onerror = () => res(null);
+    });
+  } catch(e){ return null; }
+}
+
+async function cachePhotoBlob(path, blob){
+  try{ await idbPut('photo_cache', { path, blob }); } catch(e){ /* no crítico */ }
+}
+
+// Devuelve una URL para mostrar la foto: primero busca la copia guardada en el
+// propio teléfono (funciona sin conexión); si no la tiene, la pide a internet
+// y de paso la guarda localmente para la próxima vez.
+async function getPhotoDisplayUrl(path){
+  if(!path) return null;
+  const cachedBlob = await getCachedPhotoBlob(path);
+  if(cachedBlob) return URL.createObjectURL(cachedBlob);
+
+  if(!isOnline()) return null;
+  const signedUrl = await getSignedPhotoUrl(path);
+  if(!signedUrl) return null;
+  try{
+    const resp = await fetch(signedUrl);
+    const blob = await resp.blob();
+    cachePhotoBlob(path, blob);
+    return URL.createObjectURL(blob);
+  } catch(e){
+    return signedUrl; // si falla la descarga para cachear, al menos muestra la firmada
+  }
+}
+
+async function getSignedPhotoUrl(path){
+  try{
+    const { data, error } = await sb.storage.from('pacientes-fotos').createSignedUrl(path, 3600);
+    if(error) return null;
+    return data.signedUrl;
+  } catch(e){ return null; }
+}
+
+async function hydratePhotoThumbnails(root){
+  const imgs = (root || document).querySelectorAll('img.photo-thumb[data-path]');
+  for(const img of imgs){
+    if(img.dataset.hydrated) continue;
+    const existingSrc = img.getAttribute('src') || '';
+    if(existingSrc.startsWith('blob:')) continue; // ya tiene vista previa local
+    if(!img.dataset.path) continue;
+    img.dataset.hydrated = '1';
+    const url = await getPhotoDisplayUrl(img.dataset.path);
+    if(url) img.src = url;
+    else img.alt = 'Sin conexión — foto no disponible aún en este teléfono';
+  }
+}
+
+function viewPhoto(path){
+  getPhotoDisplayUrl(path).then(url => {
+    if(url) window.open(url, '_blank');
+    else alert('Esta foto todavía no se ha guardado en este teléfono y no hay conexión para traerla. Ábrela una vez con internet y luego quedará disponible sin conexión.');
+  });
+}
+
+function viewPhotoEntry(fieldKey, i){
+  const p = formPhotos[fieldKey][i];
+  const usarMejorada = p.view !== 'original' && p.mejorada;
+  viewPhoto(usarMejorada ? p.mejorada : p.original);
+}
+
+// ---- Mejora automática de imagen (escala de grises + contraste + nitidez) ----
+// Corre enteramente en el teléfono, sin servicios externos ni costo.
+// No hace recorte automático de bordes ni corrige perspectiva todavía.
+async function enhanceImageFile(file, maxDim){
+  maxDim = maxDim || 1800;
+  const img = await new Promise((resolve, reject) => {
+    const im = new Image();
+    im.onload = () => resolve(im);
+    im.onerror = reject;
+    im.src = URL.createObjectURL(file);
+  });
+  const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+  const w = Math.max(1, Math.round(img.width * scale));
+  const h = Math.max(1, Math.round(img.height * scale));
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0, w, h);
+  URL.revokeObjectURL(img.src);
+
+  const imageData = ctx.getImageData(0, 0, w, h);
+  const data = imageData.data;
+  const n = w * h;
+  const gray = new Float32Array(n);
+  for(let i = 0, p = 0; i < n; i++, p += 4){
+    gray[i] = 0.299*data[p] + 0.587*data[p+1] + 0.114*data[p+2];
+  }
+
+  // Auto-contraste por histograma (recorta el 2% más oscuro y más claro)
+  const hist = new Uint32Array(256);
+  for(let i = 0; i < n; i++) hist[Math.round(gray[i])]++;
+  let lo = 0, hi = 255, cum = 0;
+  const loTarget = n * 0.02, hiTarget = n * 0.98;
+  for(let v = 0; v < 256; v++){ cum += hist[v]; if(cum >= loTarget){ lo = v; break; } }
+  cum = 0;
+  for(let v = 255; v >= 0; v--){ cum += hist[v]; if(cum >= (n - hiTarget)){ hi = v; break; } }
+  const range = Math.max(1, hi - lo);
+  for(let i = 0; i < n; i++){
+    gray[i] = Math.max(0, Math.min(255, (gray[i] - lo) * (255 / range)));
+  }
+
+  // Nitidez suave (unsharp mask) con un desenfoque de caja rápido (separable)
+  const blurred = boxBlur1D(gray, w, h, 1);
+  const amount = 0.6;
+  for(let i = 0; i < n; i++){
+    gray[i] = Math.max(0, Math.min(255, gray[i] + amount * (gray[i] - blurred[i])));
+  }
+
+  for(let i = 0, p = 0; i < n; i++, p += 4){
+    const v = gray[i];
+    data[p] = data[p+1] = data[p+2] = v;
+  }
+  ctx.putImageData(imageData, 0, 0);
+
+  return new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.85));
+}
+
+function boxBlur1D(src, w, h, radius){
+  const size = radius * 2 + 1;
+  const tmp = new Float32Array(w * h);
+  const out = new Float32Array(w * h);
+  const clampv = (v, mn, mx) => v < mn ? mn : (v > mx ? mx : v);
+  for(let y = 0; y < h; y++){
+    let sum = 0;
+    const row = y * w;
+    for(let x = -radius; x <= radius; x++) sum += src[row + clampv(x, 0, w-1)];
+    for(let x = 0; x < w; x++){
+      tmp[row + x] = sum / size;
+      sum += src[row + clampv(x+radius+1, 0, w-1)] - src[row + clampv(x-radius, 0, w-1)];
+    }
+  }
+  for(let x = 0; x < w; x++){
+    let sum = 0;
+    for(let y = -radius; y <= radius; y++) sum += tmp[clampv(y, 0, h-1) * w + x];
+    for(let y = 0; y < h; y++){
+      out[y*w + x] = sum / size;
+      sum += tmp[clampv(y+radius+1, 0, h-1)*w + x] - tmp[clampv(y-radius, 0, h-1)*w + x];
+    }
+  }
+  return out;
+}
+
+async function downloadAllPhotosOffline(){
+  const btn = document.getElementById('downloadPhotosBtn');
+  if(!isOnline()){
+    alert('Necesitas conexión a internet para descargar las fotos.');
+    return;
+  }
+  const allPaths = [];
+  pacientes.forEach(p => {
+    PHOTO_FIELDS.forEach(k => {
+      (p.fotosPaths?.[k] || []).forEach(raw => {
+        const e = normalizePhotoEntry(raw);
+        if(e.original) allPaths.push(e.original);
+        if(e.mejorada) allPaths.push(e.mejorada);
+      });
+    });
+  });
+  if(allPaths.length === 0){
+    alert('No hay fotos guardadas todavía en ningún paciente.');
+    return;
+  }
+
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  let done = 0, nuevas = 0, fallidas = 0;
+
+  for(const path of allPaths){
+    btn.textContent = `Descargando… ${done + 1}/${allPaths.length}`;
+    const yaEstaba = await getCachedPhotoBlob(path);
+    if(yaEstaba){ done++; continue; }
+    try{
+      const signedUrl = await getSignedPhotoUrl(path);
+      if(!signedUrl) throw new Error('sin url firmada');
+      const resp = await fetch(signedUrl);
+      const blob = await resp.blob();
+      await cachePhotoBlob(path, blob);
+      nuevas++;
+    } catch(e){
+      fallidas++;
+    }
+    done++;
+  }
+
+  btn.disabled = false;
+  btn.textContent = originalText;
+  alert(`Listo. ${nuevas} foto(s) nueva(s) guardadas en este teléfono para verlas sin conexión.` + (fallidas ? ` ${fallidas} no se pudieron descargar — revisa tu conexión e inténtalo de nuevo.` : ' Todas las fotos de todos los pacientes ya están disponibles offline en este dispositivo.'));
+}
+document.getElementById('downloadPhotosBtn').addEventListener('click', downloadAllPhotosOffline);
+
+async function uploadPhoto(file, fieldKey){
+  const statusEl = document.getElementById('ocrstatus_f_' + fieldKey);
+  if(!isOnline()){
+    if(statusEl) statusEl.textContent = 'Sin conexión: no se pudo subir la foto. Inténtalo de nuevo cuando tengas internet.';
+    return;
+  }
+  const safeName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
+  const stamp = Date.now();
+  const originalPath = `${currentPhotoOwnerId}/${fieldKey}/original-${stamp}-${safeName}`;
+  const mejoradaPath = `${currentPhotoOwnerId}/${fieldKey}/mejorada-${stamp}-${safeName.replace(/\.[^.]+$/, '')}.jpg`;
+
+  const entry = {
+    original: originalPath, mejorada: null,
+    previewOriginal: URL.createObjectURL(file), previewMejorada: null,
+    view: 'mejorada'
+  };
+  const idx = formPhotos[fieldKey].push(entry) - 1;
+  renderPhotoStrip(fieldKey);
+
+  if(statusEl) statusEl.textContent = 'Subiendo foto original…';
+  const { error: errOriginal } = await sb.storage.from('pacientes-fotos').upload(originalPath, file, { upsert: true });
+  if(errOriginal){
+    formPhotos[fieldKey].splice(idx, 1);
+    renderPhotoStrip(fieldKey);
+    if(statusEl) statusEl.textContent = 'No se pudo subir la foto: ' + errOriginal.message;
+    return;
+  }
+  cachePhotoBlob(originalPath, file);
+
+  if(statusEl) statusEl.textContent = '✓ Original guardado. Generando versión mejorada…';
+  try{
+    const enhancedBlob = await enhanceImageFile(file);
+    const { error: errMejorada } = await sb.storage.from('pacientes-fotos').upload(mejoradaPath, enhancedBlob, { upsert: true, contentType: 'image/jpeg' });
+    if(errMejorada) throw errMejorada;
+    entry.mejorada = mejoradaPath;
+    entry.previewMejorada = URL.createObjectURL(enhancedBlob);
+    entry.view = 'mejorada';
+    cachePhotoBlob(mejoradaPath, enhancedBlob);
+    renderPhotoStrip(fieldKey);
+    if(statusEl) statusEl.textContent = '✓ Foto guardada (original y versión mejorada).';
+  } catch(e){
+    if(statusEl) statusEl.textContent = '✓ Foto original guardada (no se pudo generar la versión mejorada; el original sigue disponible).';
+  }
+}
 
 const listEl = document.getElementById('patientList');
 const emptyEl = document.getElementById('emptyState');
@@ -910,8 +1326,38 @@ async function tryAutoFillOrSignIn(){
   } catch(e){ /* el usuario canceló el selector o el navegador no tiene una credencial guardada */ }
 }
 
+function getStoredSupabaseSession(){
+  // Busca la sesión que Supabase ya guardó en este teléfono (localStorage),
+  // sin depender de que el navegador pueda validarla/renovarla contra el servidor.
+  try{
+    for(let i = 0; i < localStorage.length; i++){
+      const key = localStorage.key(i);
+      if(key && key.startsWith('sb-') && key.endsWith('-auth-token')){
+        const raw = localStorage.getItem(key);
+        if(!raw) continue;
+        const parsed = JSON.parse(raw);
+        if(parsed && parsed.access_token) return parsed;
+      }
+    }
+  } catch(e){ /* ignora */ }
+  return null;
+}
+
 async function checkSession(){
-  const { data: { session } } = await sb.auth.getSession();
+  let session = null;
+  try{
+    const result = await sb.auth.getSession();
+    session = result?.data?.session || null;
+  } catch(e){ /* getSession puede fallar sin conexión al intentar renovar */ }
+
+  if(!session){
+    // No se pudo obtener/renovar la sesión contra el servidor (sin conexión,
+    // o el teléfono cree tener señal pero no llega internet de verdad).
+    // Si hay una sesión guardada en este teléfono, se confía en ella para
+    // poder seguir trabajando con los datos locales.
+    session = getStoredSupabaseSession();
+  }
+
   if(session){
     loginScreen.style.display = 'none';
     appRoot.style.display = 'block';
@@ -986,6 +1432,7 @@ function rowToPatient(r){
     categoria: r.categoria_paciente,
     rango: r.rango_militar,
     tipo: r.tipo,
+    cirujano: r.cirujano,
     diagnostico: r.diagnostico,
     fechaConsulta: r.fecha_consulta,
     asa: r.asa,
@@ -993,6 +1440,7 @@ function rowToPatient(r){
     signos: r.signos,
     compUrg: r.complementarios_urgencia,
     compElec: r.complementarios_electivos,
+    compImagen: r.complementarios_imagen,
     valoraciones: r.valoraciones_especialidades,
     chequeoAnestesico: r.chequeo_anestesico,
     comorbilidades: r.comorbilidades,
@@ -1001,8 +1449,12 @@ function rowToPatient(r){
     pendientes: r.pendientes,
     tratPropuesto: r.trat_propuesto,
     fechaCirugia: r.fecha_cirugia,
+    estadoQuirurgico: r.estado_quirurgico,
+    fechaOperacionReal: r.fecha_operacion_real,
     hallazgo: r.hallazgo,
     tecnica: r.tecnica,
+    informeOperatorio: r.informe_operatorio,
+    biopsias: r.biopsias,
     complicaciones: r.complicaciones,
     tratComplicaciones: r.trat_complicaciones,
     estadia: r.estadia,
@@ -1010,6 +1462,17 @@ function rowToPatient(r){
     tratPosop: r.trat_posop,
     seguimiento: r.seguimiento,
     scores: r.scores_clinicos,
+    fotosPaths: {
+      carnet: r.carnet_fotos || [],
+      direccion: r.direccion_fotos || [],
+      compUrg: r.complementarios_urgencia_fotos || [],
+      compElec: r.complementarios_electivos_fotos || [],
+      compImagen: r.complementarios_imagen_fotos || [],
+      valoraciones: r.valoraciones_fotos || [],
+      chequeoAnestesico: r.chequeo_anestesico_fotos || [],
+      informeOperatorio: r.informe_operatorio_fotos || [],
+      biopsias: r.biopsias_fotos || [],
+    },
   };
 }
 
@@ -1026,23 +1489,24 @@ function patientToRow(p){
     categoria_paciente: p.categoria || null,
     rango_militar: p.categoria === 'Militar' ? (p.rango || null) : null,
     tipo: p.tipo,
+    cirujano: p.cirujano || null,
     diagnostico: p.diagnostico || null,
     fecha_consulta: p.fechaConsulta || null,
     asa: p.asa || null,
     sintomas: p.sintomas || null,
     signos: p.signos || null,
-    complementarios_urgencia: p.compUrg || null,
-    complementarios_electivos: p.compElec || null,
-    valoraciones_especialidades: p.valoraciones || null,
-    chequeo_anestesico: p.chequeoAnestesico || null,
     comorbilidades: p.comorbilidades || null,
     trat_comorbilidades: p.tratComorbilidades || null,
     trat_inicial: p.tratInicial || null,
     pendientes: p.pendientes || null,
     trat_propuesto: p.tratPropuesto || null,
     fecha_cirugia: p.fechaCirugia || null,
+    estado_quirurgico: p.estadoQuirurgico || 'pendiente',
+    fecha_operacion_real: p.estadoQuirurgico === 'operado' ? (p.fechaOperacionReal || null) : null,
     hallazgo: p.hallazgo || null,
     tecnica: p.tecnica || null,
+    informe_operatorio: p.informeOperatorio || null,
+    biopsias: p.biopsias || null,
     complicaciones: p.complicaciones || null,
     trat_complicaciones: p.tratComplicaciones || null,
     estadia: p.estadia ? parseInt(p.estadia) : null,
@@ -1050,6 +1514,13 @@ function patientToRow(p){
     trat_posop: p.tratPosop || null,
     seguimiento: p.seguimiento || null,
     scores_clinicos: p.scores || null,
+    complementarios_urgencia_fotos: (p.fotos?.compUrg || []).map(f => ({ original: f.original, mejorada: f.mejorada || null })),
+    complementarios_electivos_fotos: (p.fotos?.compElec || []).map(f => ({ original: f.original, mejorada: f.mejorada || null })),
+    complementarios_imagen_fotos: (p.fotos?.compImagen || []).map(f => ({ original: f.original, mejorada: f.mejorada || null })),
+    valoraciones_fotos: (p.fotos?.valoraciones || []).map(f => ({ original: f.original, mejorada: f.mejorada || null })),
+    chequeo_anestesico_fotos: (p.fotos?.chequeoAnestesico || []).map(f => ({ original: f.original, mejorada: f.mejorada || null })),
+    informe_operatorio_fotos: (p.fotos?.informeOperatorio || []).map(f => ({ original: f.original, mejorada: f.mejorada || null })),
+    biopsias_fotos: (p.fotos?.biopsias || []).map(f => ({ original: f.original, mejorada: f.mejorada || null })),
   };
 }
 
@@ -1071,39 +1542,19 @@ function updateScoreVisibility(){
 }
 document.getElementById('f_diagnostico').addEventListener('input', updateScoreVisibility);
 
-// ---- Escaneo de fotos a texto (OCR) ----
-let ocrWorker = null;
-async function getOcrWorker(){
-  if(!ocrWorker){
-    ocrWorker = await Tesseract.createWorker('spa');
-  }
-  return ocrWorker;
-}
-
 document.querySelectorAll('.ocr-input').forEach(input => {
   input.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if(!file) return;
     const targetId = input.dataset.target;
-    const field = document.getElementById(targetId);
     const statusEl = document.getElementById('ocrstatus_' + targetId);
-    if(statusEl) statusEl.textContent = '🔎 Leyendo la foto… puede tardar unos segundos.';
+    const fieldKey = targetId.replace('f_', '');
 
-    try{
-      const worker = await getOcrWorker();
-      const { data: { text } } = await worker.recognize(file);
-      const limpio = text.trim();
-      if(!limpio){
-        if(statusEl) statusEl.textContent = 'No se detectó texto legible en la foto. Puedes escribirlo a mano.';
-      } else {
-        field.value = field.value ? (field.value.trim() + '\n' + limpio) : limpio;
-        if(statusEl) statusEl.textContent = '✓ Texto agregado — revísalo, el escaneo puede tener errores.';
-      }
-    } catch(err){
-      if(statusEl) statusEl.textContent = 'No se pudo leer la foto (revisa tu conexión e inténtalo de nuevo).';
-    } finally {
-      input.value = ''; // permite volver a tomar otra foto para el mismo campo
-    }
+    // Todos los campos con esta clase solo guardan la foto (original + mejorada).
+    // La lectura de texto es aparte y opcional, con el botón 🔤 en cada miniatura.
+    if(statusEl) statusEl.textContent = 'Subiendo foto…';
+    await uploadPhoto(file, fieldKey);
+    input.value = '';
   });
 });
 
@@ -1179,8 +1630,16 @@ function fmtDate(d){
   return `${day}/${m}/${y}`;
 }
 
+function isOperado(p){
+  return p.estadoQuirurgico === 'operado';
+}
+
 function matchesFilter(p){
-  if(currentFilter !== 'todos' && p.tipo !== currentFilter) return false;
+  const operado = isOperado(p);
+  if(currentFilter === 'pendiente' && operado) return false;
+  if(currentFilter === 'urgencia' && !(operado && p.tipo === 'urgencia')) return false;
+  if(currentFilter === 'electiva' && !(operado && p.tipo === 'electiva')) return false;
+  if(cirujanoFilterValue && p.cirujano !== cirujanoFilterValue) return false;
   if(searchTerm){
     const t = searchTerm.toLowerCase();
     return (p.nombre||'').toLowerCase().includes(t) || (p.diagnostico||'').toLowerCase().includes(t) || (p.hc||'').toLowerCase().includes(t);
@@ -1194,8 +1653,9 @@ function render(){
   emptyEl.style.display = pacientes.length === 0 ? 'block' : 'none';
 
   document.getElementById('count-todos').textContent = pacientes.length;
-  document.getElementById('count-urgencia').textContent = pacientes.filter(p=>p.tipo==='urgencia').length;
-  document.getElementById('count-electiva').textContent = pacientes.filter(p=>p.tipo==='electiva').length;
+  document.getElementById('count-pendiente').textContent = pacientes.filter(p => !isOperado(p)).length;
+  document.getElementById('count-urgencia').textContent = pacientes.filter(p => isOperado(p) && p.tipo==='urgencia').length;
+  document.getElementById('count-electiva').textContent = pacientes.filter(p => isOperado(p) && p.tipo==='electiva').length;
 
   if(pacientes.length > 0 && visibles.length === 0){
     listEl.innerHTML = '<div class="empty">Ningún paciente coincide con este filtro o búsqueda.</div>';
@@ -1209,9 +1669,9 @@ function render(){
       <div class="patient-summary">
         <span class="p-num">${idx+1}</span>
         <span class="p-name">${p.nombre || 'Sin nombre'}${p.hc ? ' <span style="font-weight:400;color:var(--ink-soft);font-size:12px;">(HC '+p.hc+')</span>' : ''}</span>
-        <span class="p-meta">${p.edad ? p.edad+' años' : '—'}${p.sexo ? ', '+p.sexo : ''}</span>
+        <span class="p-meta">${p.edad ? p.edad+' años' : '—'}${p.sexo ? ', '+p.sexo : ''}${p.cirujano ? ' · '+p.cirujano.replace('René Luis Pérez Guerra','René').replace('Lis de Cañas Cabrales','Lis') : ''}</span>
         <span class="p-diag">${p.diagnostico || '—'}</span>
-        <span class="p-date">${p.tipo==='urgencia' ? '<span class="badge badge-urg">Urgencia</span>' : '<span class="badge badge-elec">Electiva</span>'}</span>
+        <span class="p-date">${isOperado(p) ? (p.tipo==='urgencia' ? '<span class="badge badge-urg">Operado · Urgencia</span>' : '<span class="badge badge-elec">Operado · Electiva</span>') : '<span class="badge badge-pendiente">Pendiente a cirugía</span>'}</span>
         <span>${p.estado==='Fallecido' ? '<span class="badge badge-fallecido">Fallecido</span>' : '<span class="badge badge-vivo">Vivo</span>'}</span>
         <span class="chevron">▾</span>
       </div>
@@ -1220,6 +1680,7 @@ function render(){
           <div class="detail-section">
             <h4>Datos generales</h4>
             ${field('No. historia clínica', p.hc)}
+            ${field('Cirujano', p.cirujano)}
             ${field('Carnet de identidad', p.carnet)}
             ${field('Teléfono', p.telefono)}
             ${field('Dirección', p.direccion)}
@@ -1237,9 +1698,15 @@ function render(){
           <div class="detail-section">
             <h4>Complementarios y valoraciones</h4>
             ${field('Complementarios de urgencia', p.compUrg)}
+            ${photoThumbsReadOnly(p.fotosPaths?.compUrg)}
             ${field('Complementarios electivos', p.compElec)}
+            ${photoThumbsReadOnly(p.fotosPaths?.compElec)}
+            ${field('Complementarios de Imagen', p.compImagen)}
+            ${photoThumbsReadOnly(p.fotosPaths?.compImagen)}
             ${field('Valoraciones por otras especialidades', p.valoraciones)}
+            ${photoThumbsReadOnly(p.fotosPaths?.valoraciones)}
             ${field('Chequeo anestésico', p.chequeoAnestesico)}
+            ${photoThumbsReadOnly(p.fotosPaths?.chequeoAnestesico)}
           </div>
           <div class="detail-section">
             <h4>Comorbilidades</h4>
@@ -1254,9 +1721,15 @@ function render(){
           </div>
           <div class="detail-section">
             <h4>Cirugía</h4>
-            ${field('Fecha de cirugía', fmtDate(p.fechaCirugia))}
+            ${field('Fecha de cirugía (probable)', fmtDate(p.fechaCirugia))}
+            ${field('Estado quirúrgico', p.estadoQuirurgico === 'operado' ? 'Operado' : 'Pendiente')}
+            ${p.estadoQuirurgico === 'operado' ? field('Fecha de operación (real)', fmtDate(p.fechaOperacionReal)) : ''}
             ${field('Hallazgo operatorio', p.hallazgo)}
             ${field('Técnica quirúrgica', p.tecnica)}
+            ${field('Informe operatorio', p.informeOperatorio)}
+            ${photoThumbsReadOnly(p.fotosPaths?.informeOperatorio)}
+            ${field('Biopsias', p.biopsias)}
+            ${photoThumbsReadOnly(p.fotosPaths?.biopsias)}
           </div>
           <div class="detail-section">
             <h4>Posoperatorio</h4>
@@ -1286,6 +1759,7 @@ function render(){
     `;
     card.querySelector('.patient-summary').addEventListener('click', () => {
       card.classList.toggle('open');
+      if(card.classList.contains('open')) hydratePhotoThumbnails(card);
     });
     listEl.appendChild(card);
   });
@@ -1293,6 +1767,29 @@ function render(){
 
 function field(label, value){
   return `<div class="field"><div class="field-label">${label}</div><div class="field-value">${value && value.trim() ? value : '—'}</div></div>`;
+}
+
+function photoThumbsReadOnly(paths){
+  if(!paths || !paths.length) return '';
+  return `<div class="photo-strip">${paths.map(raw => {
+    const e = normalizePhotoEntry(raw);
+    const path = e.mejorada || e.original;
+    return `<div class="photo-thumb-wrap">
+      <img class="photo-thumb" data-path="${path}" onclick="viewPhoto(this.dataset.path)">
+      ${e.mejorada ? `<div class="photo-thumb-toggle" title="Ver original/mejorada" data-original="${e.original}" data-mejorada="${e.mejorada}" onclick="event.stopPropagation(); toggleReadOnlyThumb(this)">✨</div>` : ''}
+    </div>`;
+  }).join('')}</div>`;
+}
+
+function toggleReadOnlyThumb(toggleEl){
+  const img = toggleEl.previousElementSibling;
+  const showingMejorada = toggleEl.textContent.trim() === '✨';
+  const nextPath = showingMejorada ? toggleEl.dataset.original : toggleEl.dataset.mejorada;
+  toggleEl.textContent = showingMejorada ? '📷' : '✨';
+  img.dataset.path = nextPath;
+  img.removeAttribute('data-hydrated');
+  img.src = '';
+  hydratePhotoThumbnails(img.closest('.photo-strip'));
 }
 
 // ---- Tabs ----
@@ -1310,16 +1807,27 @@ document.getElementById('searchInput').addEventListener('input', e => {
   render();
 });
 
+document.getElementById('cirujanoFilter').addEventListener('change', e => {
+  cirujanoFilterValue = e.target.value;
+  render();
+});
+
 // ---- Modal ----
 const overlay = document.getElementById('modalOverlay');
-function openModal(){ overlay.classList.add('open'); }
+function openModal(){
+  if(!editingId) currentPhotoOwnerId = 'local-' + crypto.randomUUID();
+  overlay.classList.add('open');
+}
 function closeModal(){
   overlay.classList.remove('open');
   document.getElementById('patientForm').reset();
   document.getElementById('wrap_rango').style.display = 'none';
+  document.getElementById('wrap_fechaOperacionReal').style.display = 'none';
   resetScores();
   updateScoreVisibility();
   document.querySelectorAll('.ocr-status').forEach(el => el.textContent = '');
+  resetFormPhotos();
+  currentPhotoOwnerId = null;
   editingId = null;
   document.getElementById('modalTitle').textContent = 'Nuevo paciente';
 }
@@ -1344,30 +1852,32 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     categoria: document.getElementById('f_categoria').value,
     rango: document.getElementById('f_rango').value,
     tipo: document.querySelector('input[name="f_tipo"]:checked').value,
+    cirujano: document.getElementById('f_cirujano').value,
     diagnostico: document.getElementById('f_diagnostico').value,
     fechaConsulta: document.getElementById('f_fechaConsulta').value,
     asa: document.getElementById('f_asa').value,
     sintomas: document.getElementById('f_sintomas').value,
     signos: document.getElementById('f_signos').value,
-    compUrg: document.getElementById('f_compUrg').value,
-    compElec: document.getElementById('f_compElec').value,
-    valoraciones: document.getElementById('f_valoraciones').value,
-    chequeoAnestesico: document.getElementById('f_chequeoAnestesico').value,
     comorbilidades: document.getElementById('f_comorbilidades').value,
     tratComorbilidades: document.getElementById('f_tratComorbilidades').value,
     tratInicial: document.getElementById('f_tratInicial').value,
     pendientes: document.getElementById('f_pendientes').value,
     tratPropuesto: document.getElementById('f_tratPropuesto').value,
     fechaCirugia: document.getElementById('f_fechaCirugia').value,
+    estadoQuirurgico: document.querySelector('input[name="f_estadoQuirurgico"]:checked').value,
+    fechaOperacionReal: document.getElementById('f_fechaOperacionReal').value,
     estadia: document.getElementById('f_estadia').value,
     hallazgo: document.getElementById('f_hallazgo').value,
     tecnica: document.getElementById('f_tecnica').value,
+    informeOperatorio: document.getElementById('f_informeOperatorio').value,
+    biopsias: document.getElementById('f_biopsias').value,
     complicaciones: document.getElementById('f_complicaciones').value,
     tratComplicaciones: document.getElementById('f_tratComplicaciones').value,
     estado: document.getElementById('f_estado').value,
     tratPosop: document.getElementById('f_tratPosop').value,
     seguimiento: document.getElementById('f_seguimiento').value,
     scores: collectScores(),
+    fotos: { ...formPhotos },
   };
 
   const row = patientToRow(data);
@@ -1416,6 +1926,14 @@ function editPatient(id){
   const p = pacientes.find(x => x.id === id);
   if(!p) return;
   editingId = id;
+  currentPhotoOwnerId = id;
+  PHOTO_FIELDS.forEach(k => {
+    formPhotos[k] = (p.fotosPaths?.[k] || []).map(raw => {
+      const e = normalizePhotoEntry(raw);
+      return { original: e.original, mejorada: e.mejorada, previewOriginal: null, previewMejorada: null, view: 'mejorada' };
+    });
+    renderPhotoStrip(k);
+  });
   document.getElementById('modalTitle').textContent = 'Editar paciente';
   document.getElementById('f_nombre').value = p.nombre || '';
   document.getElementById('f_hc').value = p.hc || '';
@@ -1429,25 +1947,27 @@ function editPatient(id){
   document.getElementById('f_rango').value = p.rango || '';
   document.getElementById('wrap_rango').style.display = p.categoria === 'Militar' ? 'block' : 'none';
   document.querySelector(`input[name="f_tipo"][value="${p.tipo}"]`).checked = true;
+  document.getElementById('f_cirujano').value = p.cirujano || '';
   document.getElementById('f_diagnostico').value = p.diagnostico || '';
   updateScoreVisibility();
   document.getElementById('f_fechaConsulta').value = p.fechaConsulta || '';
   document.getElementById('f_asa').value = p.asa || '';
   document.getElementById('f_sintomas').value = p.sintomas || '';
   document.getElementById('f_signos').value = p.signos || '';
-  document.getElementById('f_compUrg').value = p.compUrg || '';
-  document.getElementById('f_compElec').value = p.compElec || '';
-  document.getElementById('f_valoraciones').value = p.valoraciones || '';
-  document.getElementById('f_chequeoAnestesico').value = p.chequeoAnestesico || '';
   document.getElementById('f_comorbilidades').value = p.comorbilidades || '';
   document.getElementById('f_tratComorbilidades').value = p.tratComorbilidades || '';
   document.getElementById('f_tratInicial').value = p.tratInicial || '';
   document.getElementById('f_pendientes').value = p.pendientes || '';
   document.getElementById('f_tratPropuesto').value = p.tratPropuesto || '';
   document.getElementById('f_fechaCirugia').value = p.fechaCirugia || '';
+  document.querySelector(`input[name="f_estadoQuirurgico"][value="${p.estadoQuirurgico || 'pendiente'}"]`).checked = true;
+  document.getElementById('f_fechaOperacionReal').value = p.fechaOperacionReal || '';
+  document.getElementById('wrap_fechaOperacionReal').style.display = (p.estadoQuirurgico === 'operado') ? 'grid' : 'none';
   document.getElementById('f_estadia').value = p.estadia || '';
   document.getElementById('f_hallazgo').value = p.hallazgo || '';
   document.getElementById('f_tecnica').value = p.tecnica || '';
+  document.getElementById('f_informeOperatorio').value = p.informeOperatorio || '';
+  document.getElementById('f_biopsias').value = p.biopsias || '';
   document.getElementById('f_complicaciones').value = p.complicaciones || '';
   document.getElementById('f_tratComplicaciones').value = p.tratComplicaciones || '';
   document.getElementById('f_estado').value = p.estado || 'Vivo';
@@ -1490,8 +2010,8 @@ async function deletePatient(id){
 
 // ---- CSV export ----
 document.getElementById('exportBtn').addEventListener('click', () => {
-  const headers = ['Nombre','No. historia clínica','Carnet de identidad','Teléfono','Dirección','Edad','Sexo','Raza','Categoría','Rango militar','Tipo','Diagnóstico','Fecha 1ra consulta','ASA','Síntomas','Signos','Complementarios urgencia','Complementarios electivos','Valoraciones especialidades','Chequeo anestésico','Comorbilidades','Tratamiento comorbilidades','Tratamiento inicial','Pendientes','Tratamiento propuesto','Fecha cirugía','Hallazgo operatorio','Técnica quirúrgica','Complicaciones','Tratamiento complicaciones','Estadía (días)','Estado','Tratamiento posoperatorio','Seguimiento'];
-  const rows = pacientes.map(p => [p.nombre,p.hc,p.carnet,p.telefono,p.direccion,p.edad,p.sexo,p.raza,p.categoria,p.rango,p.tipo,p.diagnostico,p.fechaConsulta,p.asa,p.sintomas,p.signos,p.compUrg,p.compElec,p.valoraciones,p.chequeoAnestesico,p.comorbilidades,p.tratComorbilidades,p.tratInicial,p.pendientes,p.tratPropuesto,p.fechaCirugia,p.hallazgo,p.tecnica,p.complicaciones,p.tratComplicaciones,p.estadia,p.estado,p.tratPosop,p.seguimiento]);
+  const headers = ['Nombre','No. historia clínica','Cirujano','Carnet de identidad','Teléfono','Dirección','Edad','Sexo','Raza','Categoría','Rango militar','Tipo','Diagnóstico','Fecha 1ra consulta','ASA','Síntomas','Signos','Complementarios urgencia','Complementarios electivos','Complementarios de imagen','Valoraciones especialidades','Chequeo anestésico','Comorbilidades','Tratamiento comorbilidades','Tratamiento inicial','Pendientes','Tratamiento propuesto','Fecha cirugía (probable)','Estado quirúrgico','Fecha operación (real)','Hallazgo operatorio','Técnica quirúrgica','Informe operatorio','Biopsias','Complicaciones','Tratamiento complicaciones','Estadía (días)','Estado','Tratamiento posoperatorio','Seguimiento'];
+  const rows = pacientes.map(p => [p.nombre,p.hc,p.cirujano,p.carnet,p.telefono,p.direccion,p.edad,p.sexo,p.raza,p.categoria,p.rango,p.tipo,p.diagnostico,p.fechaConsulta,p.asa,p.sintomas,p.signos,p.compUrg,p.compElec,p.compImagen,p.valoraciones,p.chequeoAnestesico,p.comorbilidades,p.tratComorbilidades,p.tratInicial,p.pendientes,p.tratPropuesto,p.fechaCirugia,(p.estadoQuirurgico === 'operado' ? 'Operado' : 'Pendiente'),p.fechaOperacionReal,p.hallazgo,p.tecnica,p.informeOperatorio,p.biopsias,p.complicaciones,p.tratComplicaciones,p.estadia,p.estado,p.tratPosop,p.seguimiento]);
   const csv = [headers, ...rows].map(r => r.map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
@@ -1506,6 +2026,12 @@ document.getElementById('f_categoria').addEventListener('change', e => {
   document.getElementById('wrap_rango').style.display = e.target.value === 'Militar' ? 'block' : 'none';
 });
 
+document.querySelectorAll('input[name="f_estadoQuirurgico"]').forEach(el => {
+  el.addEventListener('change', e => {
+    document.getElementById('wrap_fechaOperacionReal').style.display = e.target.value === 'operado' ? 'grid' : 'none';
+  });
+});
+
 // Hide "tratamiento posoperatorio" / "seguimiento" when Fallecido, per your original spec
 document.getElementById('f_estado').addEventListener('change', e => {
   const dead = e.target.value === 'Fallecido';
@@ -1513,6 +2039,7 @@ document.getElementById('f_estado').addEventListener('change', e => {
   document.getElementById('wrap_seguimiento').style.display = dead ? 'none' : 'block';
 });
 
+resetFormPhotos();
 checkSession().then(() => {
   // Si no hay sesión activa, intenta recuperar la credencial guardada en el navegador
   if(loginScreen.style.display !== 'none'){

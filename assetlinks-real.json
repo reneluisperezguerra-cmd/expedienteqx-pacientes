@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.netlify.mellow_malasada_e97b6c.twa",
+        "sha256_cert_fingerprints": ["0B:EB:11:26:96:3C:86:BE:C7:51:91:13:2B:7A:B9:50:E1:8D:D7:D7:30:E2:7B:8C:AC:1D:92:C1:86:11:16:16"]
+      }
+    }]

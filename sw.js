@@ -1,6 +1,6 @@
 const CACHE_NAME = 'expedienteqx-pacientes-v2';
 const ASSETS = [
-  './registro-pacientes.html',
+  './index.html',
   './manifest.json',
   './icono-192.png',
   './icono-512.png'

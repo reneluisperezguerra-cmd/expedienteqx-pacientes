@@ -1,4 +1,4 @@
-const CACHE_NAME = 'expedienteqx-pacientes-v2';
+const CACHE_NAME = 'expedienteqx-pacientes-v3';
 const ASSETS = [
   './index.html',
   './manifest.json',

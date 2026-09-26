@@ -483,6 +483,21 @@
     justify-content:center;
     z-index:2;
   }
+  .structured-list{display:flex;flex-direction:column;gap:8px;margin-top:8px;}
+  .structured-item{display:grid;grid-template-columns:minmax(180px,1fr) minmax(220px,1.4fr) auto;gap:8px;align-items:center;background:var(--paper-tint);border:1px solid var(--line);padding:8px;border-radius:8px;}
+  .structured-item.compact{grid-template-columns:minmax(180px,1fr) auto;}
+  .structured-item input,.structured-item select{width:100%;}
+  .mini-btn{border:1px solid var(--line);background:var(--paper);border-radius:7px;padding:7px 10px;cursor:pointer;font-weight:600;}
+  .mini-btn.danger{color:var(--red-ink);}
+  .conditional-box{margin-top:10px;padding:10px;border:1px solid var(--line);border-radius:9px;background:var(--paper-tint);}
+  .check-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
+  .check-row label{display:flex;gap:6px;align-items:center;font-weight:500;}
+  .media-strip{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;}
+  .media-card{width:150px;border:1px solid var(--line);border-radius:8px;background:var(--paper);padding:6px;}
+  .media-card img,.media-card video{width:100%;height:110px;object-fit:cover;border-radius:6px;background:#111;}
+  .media-card .media-actions{display:flex;justify-content:flex-end;margin-top:4px;}
+  @media(max-width:700px){.structured-item{grid-template-columns:1fr;}.media-card{width:135px;}}
+
   .photo-thumb-uploading{
     width:64px; height:64px; border-radius:8px;
     border:1px dashed var(--line);
@@ -717,11 +732,105 @@
               <div class="ocr-status" id="ocrstatus_f_chequeoAnestesico"></div>
               <div class="photo-strip" id="photos_chequeoAnestesico"></div>
             </div>
-            <div><label>Comorbilidades</label><textarea id="f_comorbilidades"></textarea></div>
-            <div><label>Tratamiento de las comorbilidades</label><textarea id="f_tratComorbilidades"></textarea></div>
+            <div>
+              <label>Comorbilidades</label>
+              <select id="f_comorbilidadSelect">
+                <option value="">Seleccionar enfermedad base…</option>
+                <option>Hipertensión arterial</option>
+                <option>Diabetes mellitus</option>
+                <option>Cardiopatía</option>
+                <option>Enfermedad renal</option>
+                <option>Enfermedad respiratoria</option>
+                <option>Obesidad</option>
+                <option>Hepatopatía</option>
+                <option>Enfermedad vascular periférica</option>
+                <option>Otra</option>
+              </select>
+              <div id="comorbilidadesList" class="structured-list"></div>
+            </div>
+            <div>
+              <label>Transfusión sanguínea previa</label>
+              <div class="check-row">
+                <label><input type="radio" name="f_transfusion" value="si"> Sí</label>
+                <label><input type="radio" name="f_transfusion" value="no" checked> No</label>
+              </div>
+              <div id="wrap_reaccionTransfusion" class="conditional-box" style="display:none;">
+                <label>Reacción adversa a la transfusión sanguínea</label>
+                <div class="check-row">
+                  <label><input type="radio" name="f_reaccionTransfusion" value="si"> Sí</label>
+                  <label><input type="radio" name="f_reaccionTransfusion" value="no" checked> No</label>
+                </div>
+                <div id="wrap_detalleReaccionTransfusion" style="display:none;margin-top:8px;">
+                  <label>Describa la reacción</label>
+                  <textarea id="f_reaccionTransfusionDetalle"></textarea>
+                </div>
+              </div>
+            </div>
+            <div>
+              <label>Alergias</label>
+              <div class="check-row">
+                <label><input type="checkbox" name="f_alergiaTipo" value="Alimentos"> Alimentos</label>
+                <label><input type="checkbox" name="f_alergiaTipo" value="Fármacos"> Fármacos</label>
+                <label><input type="checkbox" name="f_alergiaTipo" value="Otros"> Otros</label>
+              </div>
+              <div id="alergiasList" class="structured-list"></div>
+            </div>
+            <div>
+              <label>Operaciones previas</label>
+              <div class="check-row">
+                <label><input type="radio" name="f_operacionesPrevias" value="si"> Sí</label>
+                <label><input type="radio" name="f_operacionesPrevias" value="no" checked> No</label>
+              </div>
+              <div id="wrap_operacionesPrevias" class="conditional-box" style="display:none;">
+                <label>Tipo de cirugía</label>
+                <select id="f_opTipo"><option value="">Seleccionar…</option><option value="urgente">Cirugía urgente</option><option value="electiva">Cirugía electiva</option></select>
+                <div id="wrap_opUrgente" style="display:none;margin-top:8px;"></div>
+                <div id="wrap_opElectiva" style="display:none;margin-top:8px;"></div>
+                <button type="button" class="mini-btn" id="addOperacionBtn" style="margin-top:8px;">+ Agregar operación</button>
+                <div id="operacionesList" class="structured-list"></div>
+              </div>
+            </div>
+            <div>
+              <label>Pendientes por realizar</label>
+              <textarea id="f_pendientes"></textarea>
+              <div style="margin-top:8px;">
+                <label>Listo para operar</label>
+                <div class="check-row">
+                  <label><input type="radio" name="f_listoOperar" value="si"> Sí</label>
+                  <label><input type="radio" name="f_listoOperar" value="no" checked> No</label>
+                </div>
+              </div>
+            </div>
             <div><label>Tratamiento inicial</label><textarea id="f_tratInicial"></textarea></div>
-            <div><label>Pendientes por realizar</label><textarea id="f_pendientes"></textarea></div>
             <div><label>Tratamiento propuesto</label><textarea id="f_tratPropuesto"></textarea></div>
+            <div>
+              <div class="field-ocr-header">
+                <label>Electrocardiograma</label>
+                <label class="ocr-btn" for="ecg_photo">📷 Tomar foto</label>
+                <label class="ocr-btn" for="ecg_video">🎥 Grabar vídeo corto</label>
+              </div>
+              <input type="file" accept="image/*" capture="environment" id="ecg_photo" hidden>
+              <input type="file" accept="video/*" capture="environment" id="ecg_video" hidden>
+              <div class="ocr-status" id="ecg_status"></div>
+              <div class="media-strip" id="ecg_media"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Consentimiento Informado</h3>
+          <div class="form-grid full">
+            <div>
+              <div class="field-ocr-header">
+                <label>Documento de Consentimiento Informado</label>
+                <label class="ocr-btn" for="ocr_consentimientoInformado">📷 Escanear</label>
+                <label class="ocr-btn" for="upload_consentimientoInformado">📁 Subir foto</label>
+              </div>
+              <input type="file" accept="image/*" capture="environment" id="ocr_consentimientoInformado" class="ocr-input" data-target="f_consentimientoInformado" hidden>
+              <input type="file" accept="image/*" id="upload_consentimientoInformado" class="ocr-input" data-target="f_consentimientoInformado" hidden>
+              <div class="ocr-status" id="ocrstatus_f_consentimientoInformado"></div>
+              <div class="photo-strip" id="photos_consentimientoInformado"></div>
+            </div>
           </div>
         </div>
 
@@ -901,7 +1010,7 @@ if('serviceWorker' in navigator){
 
 // ---- IndexedDB: caché local + cola de cambios pendientes ----
 const DB_NAME = 'expedienteqx_db';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 let dbPromise = null;
 
 function openDB(){
@@ -913,6 +1022,7 @@ function openDB(){
       if(!db.objectStoreNames.contains('pacientes')) db.createObjectStore('pacientes', { keyPath: 'id' });
       if(!db.objectStoreNames.contains('pending_ops')) db.createObjectStore('pending_ops', { keyPath: 'opId', autoIncrement: true });
       if(!db.objectStoreNames.contains('photo_cache')) db.createObjectStore('photo_cache', { keyPath: 'path' });
+      if(!db.objectStoreNames.contains('pending_media')) db.createObjectStore('pending_media', { keyPath: 'mediaId', autoIncrement: true });
     };
     req.onsuccess = (e) => resolve(e.target.result);
     req.onerror = (e) => reject(e.target.error);
@@ -953,15 +1063,51 @@ async function idbAdd(store, value){
 
 function isOnline(){ return navigator.onLine; }
 
+async function requestPersistentStorage(){
+  try{
+    if(navigator.storage?.persist) await navigator.storage.persist();
+  }catch(e){}
+}
+
 async function updateSyncStatus(){
   const pending = await idbGetAll('pending_ops');
+  const pendingMedia = await idbGetAll('pending_media');
   const el = document.getElementById('syncStatus');
   if(!isOnline()){
-    el.textContent = pending.length ? `🟠 Sin conexión — ${pending.length} cambio(s) pendiente(s) de guardar` : '🟠 Sin conexión — trabajando localmente';
-  } else if(pending.length){
-    el.textContent = `🟡 Conectado — sincronizando ${pending.length} cambio(s)…`;
+    const total = pending.length + pendingMedia.length;
+    el.textContent = total ? `🟠 Sin conexión — ${pending.length} cambio(s) y ${pendingMedia.length} archivo(s) pendiente(s)` : '🟠 Sin conexión — trabajando localmente';
+  } else if(pending.length || pendingMedia.length){
+    el.textContent = `🟡 Conectado — sincronizando ${pending.length} cambio(s) y ${pendingMedia.length} archivo(s)…`;
   } else {
     el.textContent = '🟢 En línea — todo sincronizado';
+  }
+}
+
+// ---- Cola de archivos para trabajo offline ----
+// Las fotos tomadas/subidas sin conexión se guardan como Blobs en IndexedDB.
+// Al recuperar internet se suben automáticamente a Supabase Storage.
+async function flushPendingMedia(){
+  if(!isOnline()) return;
+  const items = await idbGetAll('pending_media');
+  items.sort((a,b) => a.mediaId - b.mediaId);
+  for(const item of items){
+    try{
+      if(item.kind === 'photo'){
+        const { error: errOriginal } = await sb.storage.from('pacientes-fotos').upload(item.originalPath, item.originalBlob, { upsert:true, contentType:item.originalBlob?.type || undefined });
+        if(errOriginal) throw errOriginal;
+        if(item.enhancedBlob && item.mejoradaPath){
+          const { error: errMejorada } = await sb.storage.from('pacientes-fotos').upload(item.mejoradaPath, item.enhancedBlob, { upsert:true, contentType:'image/jpeg' });
+          if(errMejorada) throw errMejorada;
+        }
+      } else if(item.kind === 'ecg'){
+        const { error } = await sb.storage.from('pacientes-fotos').upload(item.path, item.blob, { upsert:true, contentType:item.blob?.type || undefined });
+        if(error) throw error;
+      }
+      await idbDelete('pending_media', item.mediaId);
+    } catch(e){
+      console.error('Error sincronizando archivo offline; se reintentará luego', e);
+      break;
+    }
   }
 }
 
@@ -971,6 +1117,7 @@ async function flushQueue(){
   if(flushing || !isOnline()) return;
   flushing = true;
   try{
+    await flushPendingMedia();
     let ops = await idbGetAll('pending_ops');
     ops.sort((a,b) => a.opId - b.opId);
     for(const op of ops){
@@ -987,6 +1134,7 @@ async function flushQueue(){
           const { error } = await sb.from('pacientes').delete().eq('id', op.localId);
           if(error) throw error;
         }
+        await flushPendingMedia();
         await idbDelete('pending_ops', op.opId);
       } catch(e){
         console.error('Error sincronizando operación, se reintentará luego', e);
@@ -1016,12 +1164,22 @@ let searchTerm = '';
 let cirujanoFilterValue = '';
 let currentPhotoOwnerId = null;
 
-const PHOTO_FIELDS = ['compUrg','compElec','compImagen','valoraciones','chequeoAnestesico','informeOperatorio','biopsias'];
+const PHOTO_FIELDS = ['compUrg','compElec','compImagen','valoraciones','chequeoAnestesico','informeOperatorio','biopsias','consentimientoInformado'];
 let formPhotos = {};
+let ecgMedia = [];
+let comorbilidadesDetalle = [];
+let alergiasDetalle = [];
+let operacionesPreviasDetalle = [];
 function resetFormPhotos(){
   formPhotos = {};
   PHOTO_FIELDS.forEach(k => { formPhotos[k] = []; renderPhotoStrip(k); });
+  ecgMedia = [];
+  comorbilidadesDetalle = [];
+  alergiasDetalle = [];
+  operacionesPreviasDetalle = [];
+  renderEcgMedia(); renderComorbilidades(); renderAlergias(); renderOperaciones();
 }
+
 
 // Acepta tanto el formato antiguo (una ruta de texto) como el nuevo ({original, mejorada})
 function normalizePhotoEntry(raw){
@@ -1056,6 +1214,67 @@ function togglePhotoView(fieldKey, i){
 function removePhoto(fieldKey, index){
   formPhotos[fieldKey].splice(index, 1);
   renderPhotoStrip(fieldKey);
+}
+
+function renderEcgMedia(){
+  const el=document.getElementById('ecg_media'); if(!el) return;
+  el.innerHTML=ecgMedia.map((m,i)=>{
+    const src=m.preview || '';
+    const body=m.type==='video' ? `<video controls ${src?'src="'+src+'"':''}></video>` : `<img src="${src}" alt="ECG">`;
+    return `<div class="media-card">${body}<div class="media-actions"><button type="button" class="mini-btn danger" onclick="removeEcgMedia(${i})">Eliminar</button></div></div>`;
+  }).join('');
+  ecgMedia.forEach(async (m,i)=>{ if(!m.preview && m.path){ const u=await getPhotoDisplayUrl(m.path); if(u){m.preview=u; renderEcgMedia();} } });
+}
+function removeEcgMedia(i){ ecgMedia.splice(i,1); renderEcgMedia(); }
+
+function renderComorbilidades(){
+  const el=document.getElementById('comorbilidadesList'); if(!el) return;
+  el.innerHTML=comorbilidadesDetalle.map((x,i)=>`<div class="structured-item"><strong>${escapeHtml(x.enfermedad)}</strong><input value="${escapeAttr(x.tratamiento||'')}" placeholder="Tratamiento" oninput="comorbilidadesDetalle[${i}].tratamiento=this.value"><button type="button" class="mini-btn danger" onclick="comorbilidadesDetalle.splice(${i},1);renderComorbilidades()">×</button></div>`).join('');
+}
+function renderAlergias(){
+  const el=document.getElementById('alergiasList'); if(!el) return;
+  el.innerHTML=alergiasDetalle.map((x,i)=>`<div class="structured-item"><strong>${escapeHtml(x.tipo)}</strong><input value="${escapeAttr(x.alergeno||'')}" placeholder="¿A qué es alérgico?" oninput="alergiasDetalle[${i}].alergeno=this.value"><input value="${escapeAttr(x.reaccion||'')}" placeholder="Reacción alérgica" oninput="alergiasDetalle[${i}].reaccion=this.value"><button type="button" class="mini-btn danger" onclick="alergiasDetalle.splice(${i},1);renderAlergias()">×</button></div>`).join('');
+}
+function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function escapeAttr(v){return escapeHtml(v);}
+function renderOperaciones(){
+  const el=document.getElementById('operacionesList'); if(!el) return;
+  el.innerHTML=operacionesPreviasDetalle.map((x,i)=>`<div class="structured-item compact"><span><strong>${escapeHtml(x.tipo||'')}</strong> — ${escapeHtml(x.detalle||'')}</span><button type="button" class="mini-btn danger" onclick="operacionesPreviasDetalle.splice(${i},1);renderOperaciones()">×</button></div>`).join('');
+}
+function buildUrgentDetail(){
+  const w=document.getElementById('wrap_opUrgente');
+  w.innerHTML=`<label>Cirugía urgente</label><select id="f_opUrgente"><option value="">Seleccionar…</option><option>Apendicectomía convencional</option><option>Apendicectomía laparoscópica</option><option>Colecistectomía convencional</option><option>Colecistectomía laparoscópica</option><option>Cesárea</option><option>Oclusión intestinal</option><option>Úlcera perforada</option><option>Perforación diverticular</option><option>Perforación tumoral</option><option>Trauma abdominal</option><option>Embarazo ectópico</option><option>Enfermedad inflamatoria pélvica</option></select><div id="opUrgSub" style="margin-top:8px;"></div>`;
+  document.getElementById('f_opUrgente').addEventListener('change', e=>renderUrgSub(e.target.value));
+}
+function renderUrgSub(v){
+  const el=document.getElementById('opUrgSub'); if(!el) return;
+  if(v==='Oclusión intestinal') el.innerHTML=`<label>Causa</label><select id="f_opUrgCausa"><option>Bridas</option><option>Hernia externa</option><option>Hernia interna</option><option>Invaginación intestinal</option><option>Tumores</option></select><div id="opUrgCausaSub" style="margin-top:8px;"></div>`;
+  else if(v==='Úlcera perforada') el.innerHTML=`<label>Procedimiento</label><select id="f_opUlcera"><option>Sutura y epiploplastia</option><option>Antrectomía + vagotomía</option></select>`;
+  else el.innerHTML='';
+  const c=document.getElementById('f_opUrgCausa'); if(c)c.addEventListener('change',()=>renderUrgCausaSub(c.value));
+  renderUrgCausaSub(c?.value||'');
+}
+function renderUrgCausaSub(v){
+  const el=document.getElementById('opUrgCausaSub'); if(!el) return;
+  if(v==='Hernia externa') el.innerHTML=`<label>Tipo de hernia</label><select id="f_opHernia"><option>Inguinal derecha</option><option>Inguinal izquierda</option><option>Inguinal bilateral</option><option>Crural</option><option>Umbilical</option><option>Epigástrica</option><option>Spiegel</option></select>`;
+  else if(v==='Tumores') el.innerHTML=`<label>Localización</label><select id="f_opTumor"><option>Colon derecho</option><option>Colon transverso</option><option>Colon izquierdo</option><option>Colon sigmoides</option><option>Recto</option><option>Intestino delgado</option></select>`;
+  else el.innerHTML='';
+}
+function buildElectiveDetail(){
+  const w=document.getElementById('wrap_opElectiva');
+  w.innerHTML=`<label>Cirugía electiva</label><select id="f_opElectiva"><option value="">Seleccionar…</option><option>Colecistectomía convencional</option><option>Colecistectomía laparoscópica</option><option>Histerectomía convencional</option><option>Histerectomía laparoscópica</option><option>Cesárea</option><option>Colectomía</option></select><div id="opElecSub" style="margin-top:8px;"></div>`;
+  document.getElementById('f_opElectiva').addEventListener('change',e=>{const el=document.getElementById('opElecSub');el.innerHTML=e.target.value==='Colectomía'?`<label>Tipo de colectomía</label><select id="f_opColectomia"><option>Derecha</option><option>Derecha ampliada</option><option>Derecha ampliada extendida al colon izquierdo</option><option>Transversa</option><option>Izquierda</option><option>Izquierda radical</option><option>Sigmoidectomía</option><option>Subtotal</option><option>Total</option></select><div style="margin-top:8px;"><label>Abordaje</label><select id="f_opAbordaje"><option>Convencional</option><option>Laparoscópica</option></select></div>`:''});
+}
+function getCurrentOperacion(){
+  const tipo=document.getElementById('f_opTipo').value; if(!tipo) return null;
+  if(tipo==='urgente'){
+    const v=document.getElementById('f_opUrgente')?.value; if(!v) return null; let detalle=v;
+    const c=document.getElementById('f_opUrgCausa')?.value; if(c){detalle += ' — '+c; const hs=document.getElementById('f_opHernia')?.value; const tu=document.getElementById('f_opTumor')?.value; if(hs)detalle+=' — '+hs; if(tu)detalle+=' — '+tu;} const ul=document.getElementById('f_opUlcera')?.value; if(ul) detalle+=' — '+ul;
+    return {tipo:'Cirugía urgente',detalle};
+  }
+  const v=document.getElementById('f_opElectiva')?.value; if(!v) return null; let detalle=v;
+  const co=document.getElementById('f_opColectomia')?.value; const ab=document.getElementById('f_opAbordaje')?.value; if(co)detalle+=' — '+co+' — '+ab;
+  return {tipo:'Cirugía electiva',detalle};
 }
 
 async function getCachedPhotoBlob(path){
@@ -1219,6 +1438,7 @@ async function downloadAllPhotosOffline(){
   }
   const allPaths = [];
   pacientes.forEach(p => {
+    (p.fotosPaths?.electrocardiograma || []).forEach(m => { if(m.path) allPaths.push(m.path); });
     PHOTO_FIELDS.forEach(k => {
       (p.fotosPaths?.[k] || []).forEach(raw => {
         const e = normalizePhotoEntry(raw);
@@ -1261,12 +1481,9 @@ document.getElementById('downloadPhotosBtn').addEventListener('click', downloadA
 
 async function uploadPhoto(file, fieldKey){
   const statusEl = document.getElementById('ocrstatus_f_' + fieldKey);
-  if(!isOnline()){
-    if(statusEl) statusEl.textContent = 'Sin conexión: no se pudo subir la foto. Inténtalo de nuevo cuando tengas internet.';
-    return;
-  }
   const safeName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
   const stamp = Date.now();
+  if(!currentPhotoOwnerId) currentPhotoOwnerId = 'local-' + crypto.randomUUID();
   const originalPath = `${currentPhotoOwnerId}/${fieldKey}/original-${stamp}-${safeName}`;
   const mejoradaPath = `${currentPhotoOwnerId}/${fieldKey}/mejorada-${stamp}-${safeName.replace(/\.[^.]+$/, '')}.jpg`;
 
@@ -1278,30 +1495,90 @@ async function uploadPhoto(file, fieldKey){
   const idx = formPhotos[fieldKey].push(entry) - 1;
   renderPhotoStrip(fieldKey);
 
-  if(statusEl) statusEl.textContent = 'Subiendo foto original…';
-  const { error: errOriginal } = await sb.storage.from('pacientes-fotos').upload(originalPath, file, { upsert: true });
-  if(errOriginal){
-    formPhotos[fieldKey].splice(idx, 1);
-    renderPhotoStrip(fieldKey);
-    if(statusEl) statusEl.textContent = 'No se pudo subir la foto: ' + errOriginal.message;
-    return;
-  }
-  cachePhotoBlob(originalPath, file);
-
-  if(statusEl) statusEl.textContent = '✓ Original guardado. Generando versión mejorada…';
+  // La mejora de la imagen se hace completamente en el dispositivo, también offline.
+  let enhancedBlob = null;
   try{
-    const enhancedBlob = await enhanceImageFile(file);
-    const { error: errMejorada } = await sb.storage.from('pacientes-fotos').upload(mejoradaPath, enhancedBlob, { upsert: true, contentType: 'image/jpeg' });
-    if(errMejorada) throw errMejorada;
+    if(statusEl) statusEl.textContent = 'Generando versión mejorada…';
+    enhancedBlob = await enhanceImageFile(file);
     entry.mejorada = mejoradaPath;
     entry.previewMejorada = URL.createObjectURL(enhancedBlob);
     entry.view = 'mejorada';
-    cachePhotoBlob(mejoradaPath, enhancedBlob);
+    await cachePhotoBlob(mejoradaPath, enhancedBlob);
+    await cachePhotoBlob(originalPath, file);
     renderPhotoStrip(fieldKey);
-    if(statusEl) statusEl.textContent = '✓ Foto guardada (original y versión mejorada).';
   } catch(e){
-    if(statusEl) statusEl.textContent = '✓ Foto original guardada (no se pudo generar la versión mejorada; el original sigue disponible).';
+    await cachePhotoBlob(originalPath, file);
+    if(statusEl) statusEl.textContent = '✓ Original guardado; no se pudo generar la mejora.';
   }
+
+  if(!isOnline()){
+    await idbAdd('pending_media', {
+      kind:'photo', ownerId:currentPhotoOwnerId, fieldKey,
+      originalPath, mejoradaPath: enhancedBlob ? mejoradaPath : null,
+      originalBlob:file, enhancedBlob
+    });
+    if(statusEl) statusEl.textContent = enhancedBlob
+      ? '🟠 Sin conexión — original y versión mejorada guardadas en este teléfono; se subirán al recuperar internet.'
+      : '🟠 Sin conexión — foto guardada en este teléfono; se subirá al recuperar internet.';
+    return;
+  }
+
+  if(statusEl) statusEl.textContent = 'Subiendo foto original…';
+  const { error: errOriginal } = await sb.storage.from('pacientes-fotos').upload(originalPath, file, { upsert:true });
+  if(errOriginal){
+    // Si la red falla durante la subida, no perdemos la foto: pasa a la cola offline.
+    await idbAdd('pending_media', {
+      kind:'photo', ownerId:currentPhotoOwnerId, fieldKey,
+      originalPath, mejoradaPath: enhancedBlob ? mejoradaPath : null,
+      originalBlob:file, enhancedBlob
+    });
+    if(statusEl) statusEl.textContent = '🟠 Conexión inestable — foto guardada localmente y pendiente de sincronización.';
+    return;
+  }
+  if(enhancedBlob){
+    const { error: errMejorada } = await sb.storage.from('pacientes-fotos').upload(mejoradaPath, enhancedBlob, { upsert:true, contentType:'image/jpeg' });
+    if(errMejorada){
+      await idbAdd('pending_media', { kind:'photo', ownerId:currentPhotoOwnerId, fieldKey, originalPath, mejoradaPath, originalBlob:file, enhancedBlob });
+      if(statusEl) statusEl.textContent = '✓ Original guardado; versión mejorada pendiente de sincronización.';
+      return;
+    }
+  }
+  if(statusEl) statusEl.textContent = enhancedBlob ? '✓ Foto guardada (original y versión mejorada).' : '✓ Foto original guardada.';
+}
+
+document.getElementById('f_comorbilidadSelect').addEventListener('change',e=>{ const v=e.target.value; if(!v)return; if(!comorbilidadesDetalle.some(x=>x.enfermedad===v)) comorbilidadesDetalle.push({enfermedad:v,tratamiento:''}); e.target.value=''; renderComorbilidades(); });
+document.querySelectorAll('input[name="f_transfusion"]').forEach(el=>el.addEventListener('change',()=>{const si=document.querySelector('input[name="f_transfusion"]:checked')?.value==='si';document.getElementById('wrap_reaccionTransfusion').style.display=si?'block':'none';}));
+document.querySelectorAll('input[name="f_reaccionTransfusion"]').forEach(el=>el.addEventListener('change',()=>{const si=document.querySelector('input[name="f_reaccionTransfusion"]:checked')?.value==='si';document.getElementById('wrap_detalleReaccionTransfusion').style.display=si?'block':'none';}));
+document.querySelectorAll('input[name="f_alergiaTipo"]').forEach(el=>el.addEventListener('change',()=>{alergiasDetalle=[];document.querySelectorAll('input[name="f_alergiaTipo"]:checked').forEach(c=>alergiasDetalle.push({tipo:c.value,alergeno:'',reaccion:''}));renderAlergias();}));
+document.querySelectorAll('input[name="f_operacionesPrevias"]').forEach(el=>el.addEventListener('change',()=>{const si=document.querySelector('input[name="f_operacionesPrevias"]:checked')?.value==='si';document.getElementById('wrap_operacionesPrevias').style.display=si?'block':'none';}));
+document.getElementById('f_opTipo').addEventListener('change',e=>{document.getElementById('wrap_opUrgente').style.display=e.target.value==='urgente'?'block':'none';document.getElementById('wrap_opElectiva').style.display=e.target.value==='electiva'?'block':'none';if(e.target.value==='urgente')buildUrgentDetail();if(e.target.value==='electiva')buildElectiveDetail();});
+document.getElementById('addOperacionBtn').addEventListener('click',()=>{const op=getCurrentOperacion();if(!op){alert('Selecciona el tipo y la operación previa.');return;}operacionesPreviasDetalle.push(op);renderOperaciones();});
+document.getElementById('ecg_photo').addEventListener('change',e=>handleEcgFile(e.target.files?.[0],'image'));
+document.getElementById('ecg_video').addEventListener('change',e=>handleEcgFile(e.target.files?.[0],'video'));
+async function handleEcgFile(file,type){
+  if(!file) return;
+  const owner = currentPhotoOwnerId || ('local-'+crypto.randomUUID());
+  currentPhotoOwnerId = owner;
+  const ext=(file.name.split('.').pop()|| (type==='video'?'mp4':'jpg')).replace(/[^a-zA-Z0-9]/g,'');
+  const path=`${owner}/electrocardiograma/${type}-${Date.now()}.${ext}`;
+  await cachePhotoBlob(path,file);
+  ecgMedia.push({path,type,preview:URL.createObjectURL(file),name:file.name});
+  renderEcgMedia();
+  if(!isOnline()){
+    await idbAdd('pending_media',{kind:'ecg',ownerId:owner,path,blob:file});
+    document.getElementById('ecg_status').textContent='🟠 Sin conexión — ECG guardado en este teléfono; se subirá al recuperar internet.';
+    document.getElementById(type==='image'?'ecg_photo':'ecg_video').value='';
+    return;
+  }
+  document.getElementById('ecg_status').textContent='Subiendo ECG…';
+  const {error}=await sb.storage.from('pacientes-fotos').upload(path,file,{upsert:true,contentType:file.type||undefined});
+  if(error){
+    await idbAdd('pending_media',{kind:'ecg',ownerId:owner,path,blob:file});
+    document.getElementById('ecg_status').textContent='🟠 Conexión inestable — ECG guardado localmente y pendiente de sincronización.';
+  } else {
+    document.getElementById('ecg_status').textContent='✓ ECG guardado.';
+  }
+  document.getElementById(type==='image'?'ecg_photo':'ecg_video').value='';
 }
 
 const listEl = document.getElementById('patientList');
@@ -1344,6 +1621,7 @@ function getStoredSupabaseSession(){
 }
 
 async function checkSession(){
+  await requestPersistentStorage();
   let session = null;
   try{
     const result = await sb.auth.getSession();
@@ -1444,6 +1722,14 @@ function rowToPatient(r){
     valoraciones: r.valoraciones_especialidades,
     chequeoAnestesico: r.chequeo_anestesico,
     comorbilidades: r.comorbilidades,
+    comorbilidadesDetalle: r.comorbilidades_detalle || [],
+    transfusionPrevia: r.transfusion_previa || false,
+    reaccionTransfusion: r.reaccion_transfusion || false,
+    reaccionTransfusionDetalle: r.reaccion_transfusion_detalle || '',
+    alergiasDetalle: r.alergias_detalle || [],
+    operacionesPrevias: r.operaciones_previas || false,
+    operacionesPreviasDetalle: r.operaciones_previas_detalle || [],
+    listoParaOperar: r.listo_para_operar || false,
     tratComorbilidades: r.trat_comorbilidades,
     tratInicial: r.trat_inicial,
     pendientes: r.pendientes,
@@ -1472,6 +1758,8 @@ function rowToPatient(r){
       chequeoAnestesico: r.chequeo_anestesico_fotos || [],
       informeOperatorio: r.informe_operatorio_fotos || [],
       biopsias: r.biopsias_fotos || [],
+      electrocardiograma: r.electrocardiograma_media || [],
+      consentimientoInformado: r.consentimiento_informado_fotos || [],
     },
   };
 }
@@ -1496,7 +1784,15 @@ function patientToRow(p){
     sintomas: p.sintomas || null,
     signos: p.signos || null,
     comorbilidades: p.comorbilidades || null,
-    trat_comorbilidades: p.tratComorbilidades || null,
+    comorbilidades_detalle: p.comorbilidadesDetalle || [],
+    transfusion_previa: !!p.transfusionPrevia,
+    reaccion_transfusion: !!p.reaccionTransfusion,
+    reaccion_transfusion_detalle: p.reaccionTransfusionDetalle || null,
+    alergias_detalle: p.alergiasDetalle || [],
+    operaciones_previas: !!p.operacionesPrevias,
+    operaciones_previas_detalle: p.operacionesPreviasDetalle || [],
+    listo_para_operar: !!p.listoParaOperar,
+    trat_comorbilidades: null,
     trat_inicial: p.tratInicial || null,
     pendientes: p.pendientes || null,
     trat_propuesto: p.tratPropuesto || null,
@@ -1521,6 +1817,8 @@ function patientToRow(p){
     chequeo_anestesico_fotos: (p.fotos?.chequeoAnestesico || []).map(f => ({ original: f.original, mejorada: f.mejorada || null })),
     informe_operatorio_fotos: (p.fotos?.informeOperatorio || []).map(f => ({ original: f.original, mejorada: f.mejorada || null })),
     biopsias_fotos: (p.fotos?.biopsias || []).map(f => ({ original: f.original, mejorada: f.mejorada || null })),
+    electrocardiograma_media: (p.fotos?.electrocardiograma || []).map(f => ({ path: f.path, type: f.type, name: f.name || null })),
+    consentimiento_informado_fotos: (p.fotos?.consentimientoInformado || []).map(f => ({ original: f.original, mejorada: f.mejorada || null })),
   };
 }
 
@@ -1709,6 +2007,10 @@ function render(){
             ${photoThumbsReadOnly(p.fotosPaths?.chequeoAnestesico)}
           </div>
           <div class="detail-section">
+            <h4>Consentimiento Informado</h4>
+            ${photoThumbsReadOnly(p.fotosPaths?.consentimientoInformado)}
+          </div>
+          <div class="detail-section">
             <h4>Comorbilidades</h4>
             ${field('Comorbilidades', p.comorbilidades)}
             ${field('Tratamiento', p.tratComorbilidades)}
@@ -1858,8 +2160,15 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     asa: document.getElementById('f_asa').value,
     sintomas: document.getElementById('f_sintomas').value,
     signos: document.getElementById('f_signos').value,
-    comorbilidades: document.getElementById('f_comorbilidades').value,
-    tratComorbilidades: document.getElementById('f_tratComorbilidades').value,
+    comorbilidades: comorbilidadesDetalle.map(x => x.enfermedad + (x.tratamiento ? ': ' + x.tratamiento : '')).join(' | '),
+    comorbilidadesDetalle: comorbilidadesDetalle.map(x=>({...x})),
+    transfusionPrevia: document.querySelector('input[name="f_transfusion"]:checked')?.value === 'si',
+    reaccionTransfusion: document.querySelector('input[name="f_reaccionTransfusion"]:checked')?.value === 'si',
+    reaccionTransfusionDetalle: document.getElementById('f_reaccionTransfusionDetalle').value,
+    alergiasDetalle: alergiasDetalle.map(x=>({...x})),
+    operacionesPrevias: document.querySelector('input[name="f_operacionesPrevias"]:checked')?.value === 'si',
+    operacionesPreviasDetalle: operacionesPreviasDetalle.map(x=>({...x})),
+    listoParaOperar: document.querySelector('input[name="f_listoOperar"]:checked')?.value === 'si',
     tratInicial: document.getElementById('f_tratInicial').value,
     pendientes: document.getElementById('f_pendientes').value,
     tratPropuesto: document.getElementById('f_tratPropuesto').value,
@@ -1877,7 +2186,7 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     tratPosop: document.getElementById('f_tratPosop').value,
     seguimiento: document.getElementById('f_seguimiento').value,
     scores: collectScores(),
-    fotos: { ...formPhotos },
+    fotos: { ...formPhotos, electrocardiograma: ecgMedia.map(x=>({...x, preview:undefined})) },
   };
 
   const row = patientToRow(data);
@@ -1901,7 +2210,7 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
   }
   // Sin conexión (o falló el guardado en línea): guardar local y encolar
   const isLocalOnly = editingId && editingId.startsWith('local-');
-  const localId = editingId || ('local-' + crypto.randomUUID());
+  const localId = editingId || currentPhotoOwnerId || ('local-' + crypto.randomUUID());
   await idbPut('pacientes', { ...row, id: localId, created_at: new Date().toISOString() });
 
   if(isLocalOnly){
@@ -1934,6 +2243,8 @@ function editPatient(id){
     });
     renderPhotoStrip(k);
   });
+  ecgMedia = (p.fotosPaths?.electrocardiograma || []).map(x=>({...x,preview:null}));
+  renderEcgMedia();
   document.getElementById('modalTitle').textContent = 'Editar paciente';
   document.getElementById('f_nombre').value = p.nombre || '';
   document.getElementById('f_hc').value = p.hc || '';
@@ -1954,8 +2265,20 @@ function editPatient(id){
   document.getElementById('f_asa').value = p.asa || '';
   document.getElementById('f_sintomas').value = p.sintomas || '';
   document.getElementById('f_signos').value = p.signos || '';
-  document.getElementById('f_comorbilidades').value = p.comorbilidades || '';
-  document.getElementById('f_tratComorbilidades').value = p.tratComorbilidades || '';
+  comorbilidadesDetalle = Array.isArray(p.comorbilidadesDetalle) ? p.comorbilidadesDetalle.map(x=>({...x})) : [];
+  if(!comorbilidadesDetalle.length && p.comorbilidades) comorbilidadesDetalle = [{enfermedad:'Otra',tratamiento:p.comorbilidades}];
+  renderComorbilidades();
+  document.querySelector(`input[name="f_transfusion"][value="${p.transfusionPrevia?'si':'no'}"]`).checked=true;
+  document.querySelectorAll('input[name="f_transfusion"]').forEach(el=>{});
+  document.getElementById('wrap_reaccionTransfusion').style.display = p.transfusionPrevia ? 'block' : 'none';
+  document.querySelector(`input[name="f_reaccionTransfusion"][value="${p.reaccionTransfusion?'si':'no'}"]`).checked=true;
+  document.getElementById('wrap_detalleReaccionTransfusion').style.display = p.reaccionTransfusion ? 'block' : 'none';
+  document.getElementById('f_reaccionTransfusionDetalle').value = p.reaccionTransfusionDetalle || '';
+  alergiasDetalle = Array.isArray(p.alergiasDetalle) ? p.alergiasDetalle.map(x=>({...x})) : [];
+  document.querySelectorAll('input[name="f_alergiaTipo"]').forEach(el=>el.checked=alergiasDetalle.some(x=>x.tipo===el.value)); renderAlergias();
+  operacionesPreviasDetalle = Array.isArray(p.operacionesPreviasDetalle) ? p.operacionesPreviasDetalle.map(x=>({...x})) : [];
+  document.querySelector(`input[name="f_operacionesPrevias"][value="${p.operacionesPrevias?'si':'no'}"]`).checked=true; document.getElementById('wrap_operacionesPrevias').style.display=p.operacionesPrevias?'block':'none'; renderOperaciones();
+  document.querySelector(`input[name="f_listoOperar"][value="${p.listoParaOperar?'si':'no'}"]`).checked=true;
   document.getElementById('f_tratInicial').value = p.tratInicial || '';
   document.getElementById('f_pendientes').value = p.pendientes || '';
   document.getElementById('f_tratPropuesto').value = p.tratPropuesto || '';

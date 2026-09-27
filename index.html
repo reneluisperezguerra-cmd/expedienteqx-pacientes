@@ -8,8 +8,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <meta name="theme-color" content="#123524">
 <link rel="manifest" href="manifest.json">
-<link rel="icon" href="icono-192.png">
-<link rel="apple-touch-icon" href="icono-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
@@ -818,23 +816,6 @@
         </div>
 
         <div class="form-section">
-          <h3>Consentimiento Informado</h3>
-          <div class="form-grid full">
-            <div>
-              <div class="field-ocr-header">
-                <label>Documento de Consentimiento Informado</label>
-                <label class="ocr-btn" for="ocr_consentimientoInformado">📷 Escanear</label>
-                <label class="ocr-btn" for="upload_consentimientoInformado">📁 Subir foto</label>
-              </div>
-              <input type="file" accept="image/*" capture="environment" id="ocr_consentimientoInformado" class="ocr-input" data-target="f_consentimientoInformado" hidden>
-              <input type="file" accept="image/*" id="upload_consentimientoInformado" class="ocr-input" data-target="f_consentimientoInformado" hidden>
-              <div class="ocr-status" id="ocrstatus_f_consentimientoInformado"></div>
-              <div class="photo-strip" id="photos_consentimientoInformado"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="form-section">
           <h3>Escalas y scores clínicos</h3>
 
           <div class="score-card">
@@ -989,8 +970,8 @@
 </div>
 
 <script>
-const SUPABASE_URL = 'https://equvlmambhrqyiapqisa.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_WybItlg3iYqzNvPLViw91Q_S61OoGM3';
+const SUPABASE_URL = 'https://rkqpohqdwiwbkbafkxnr.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_bgnfopUCZ1cb7MQf9hgXdQ_1zRlZyLh';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ---- Instalar la app / trabajar sin conexión ----
@@ -1010,7 +991,7 @@ if('serviceWorker' in navigator){
 
 // ---- IndexedDB: caché local + cola de cambios pendientes ----
 const DB_NAME = 'expedienteqx_db';
-const DB_VERSION = 3;
+const DB_VERSION = 2;
 let dbPromise = null;
 
 function openDB(){
@@ -1022,7 +1003,6 @@ function openDB(){
       if(!db.objectStoreNames.contains('pacientes')) db.createObjectStore('pacientes', { keyPath: 'id' });
       if(!db.objectStoreNames.contains('pending_ops')) db.createObjectStore('pending_ops', { keyPath: 'opId', autoIncrement: true });
       if(!db.objectStoreNames.contains('photo_cache')) db.createObjectStore('photo_cache', { keyPath: 'path' });
-      if(!db.objectStoreNames.contains('pending_media')) db.createObjectStore('pending_media', { keyPath: 'mediaId', autoIncrement: true });
     };
     req.onsuccess = (e) => resolve(e.target.result);
     req.onerror = (e) => reject(e.target.error);
@@ -1063,51 +1043,15 @@ async function idbAdd(store, value){
 
 function isOnline(){ return navigator.onLine; }
 
-async function requestPersistentStorage(){
-  try{
-    if(navigator.storage?.persist) await navigator.storage.persist();
-  }catch(e){}
-}
-
 async function updateSyncStatus(){
   const pending = await idbGetAll('pending_ops');
-  const pendingMedia = await idbGetAll('pending_media');
   const el = document.getElementById('syncStatus');
   if(!isOnline()){
-    const total = pending.length + pendingMedia.length;
-    el.textContent = total ? `🟠 Sin conexión — ${pending.length} cambio(s) y ${pendingMedia.length} archivo(s) pendiente(s)` : '🟠 Sin conexión — trabajando localmente';
-  } else if(pending.length || pendingMedia.length){
-    el.textContent = `🟡 Conectado — sincronizando ${pending.length} cambio(s) y ${pendingMedia.length} archivo(s)…`;
+    el.textContent = pending.length ? `🟠 Sin conexión — ${pending.length} cambio(s) pendiente(s) de guardar` : '🟠 Sin conexión — trabajando localmente';
+  } else if(pending.length){
+    el.textContent = `🟡 Conectado — sincronizando ${pending.length} cambio(s)…`;
   } else {
     el.textContent = '🟢 En línea — todo sincronizado';
-  }
-}
-
-// ---- Cola de archivos para trabajo offline ----
-// Las fotos tomadas/subidas sin conexión se guardan como Blobs en IndexedDB.
-// Al recuperar internet se suben automáticamente a Supabase Storage.
-async function flushPendingMedia(){
-  if(!isOnline()) return;
-  const items = await idbGetAll('pending_media');
-  items.sort((a,b) => a.mediaId - b.mediaId);
-  for(const item of items){
-    try{
-      if(item.kind === 'photo'){
-        const { error: errOriginal } = await sb.storage.from('pacientes-fotos').upload(item.originalPath, item.originalBlob, { upsert:true, contentType:item.originalBlob?.type || undefined });
-        if(errOriginal) throw errOriginal;
-        if(item.enhancedBlob && item.mejoradaPath){
-          const { error: errMejorada } = await sb.storage.from('pacientes-fotos').upload(item.mejoradaPath, item.enhancedBlob, { upsert:true, contentType:'image/jpeg' });
-          if(errMejorada) throw errMejorada;
-        }
-      } else if(item.kind === 'ecg'){
-        const { error } = await sb.storage.from('pacientes-fotos').upload(item.path, item.blob, { upsert:true, contentType:item.blob?.type || undefined });
-        if(error) throw error;
-      }
-      await idbDelete('pending_media', item.mediaId);
-    } catch(e){
-      console.error('Error sincronizando archivo offline; se reintentará luego', e);
-      break;
-    }
   }
 }
 
@@ -1117,7 +1061,6 @@ async function flushQueue(){
   if(flushing || !isOnline()) return;
   flushing = true;
   try{
-    await flushPendingMedia();
     let ops = await idbGetAll('pending_ops');
     ops.sort((a,b) => a.opId - b.opId);
     for(const op of ops){
@@ -1134,7 +1077,6 @@ async function flushQueue(){
           const { error } = await sb.from('pacientes').delete().eq('id', op.localId);
           if(error) throw error;
         }
-        await flushPendingMedia();
         await idbDelete('pending_ops', op.opId);
       } catch(e){
         console.error('Error sincronizando operación, se reintentará luego', e);
@@ -1164,7 +1106,7 @@ let searchTerm = '';
 let cirujanoFilterValue = '';
 let currentPhotoOwnerId = null;
 
-const PHOTO_FIELDS = ['compUrg','compElec','compImagen','valoraciones','chequeoAnestesico','informeOperatorio','biopsias','consentimientoInformado'];
+const PHOTO_FIELDS = ['compUrg','compElec','compImagen','valoraciones','chequeoAnestesico','informeOperatorio','biopsias'];
 let formPhotos = {};
 let ecgMedia = [];
 let comorbilidadesDetalle = [];
@@ -1481,9 +1423,12 @@ document.getElementById('downloadPhotosBtn').addEventListener('click', downloadA
 
 async function uploadPhoto(file, fieldKey){
   const statusEl = document.getElementById('ocrstatus_f_' + fieldKey);
+  if(!isOnline()){
+    if(statusEl) statusEl.textContent = 'Sin conexión: no se pudo subir la foto. Inténtalo de nuevo cuando tengas internet.';
+    return;
+  }
   const safeName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
   const stamp = Date.now();
-  if(!currentPhotoOwnerId) currentPhotoOwnerId = 'local-' + crypto.randomUUID();
   const originalPath = `${currentPhotoOwnerId}/${fieldKey}/original-${stamp}-${safeName}`;
   const mejoradaPath = `${currentPhotoOwnerId}/${fieldKey}/mejorada-${stamp}-${safeName.replace(/\.[^.]+$/, '')}.jpg`;
 
@@ -1495,55 +1440,30 @@ async function uploadPhoto(file, fieldKey){
   const idx = formPhotos[fieldKey].push(entry) - 1;
   renderPhotoStrip(fieldKey);
 
-  // La mejora de la imagen se hace completamente en el dispositivo, también offline.
-  let enhancedBlob = null;
+  if(statusEl) statusEl.textContent = 'Subiendo foto original…';
+  const { error: errOriginal } = await sb.storage.from('pacientes-fotos').upload(originalPath, file, { upsert: true });
+  if(errOriginal){
+    formPhotos[fieldKey].splice(idx, 1);
+    renderPhotoStrip(fieldKey);
+    if(statusEl) statusEl.textContent = 'No se pudo subir la foto: ' + errOriginal.message;
+    return;
+  }
+  cachePhotoBlob(originalPath, file);
+
+  if(statusEl) statusEl.textContent = '✓ Original guardado. Generando versión mejorada…';
   try{
-    if(statusEl) statusEl.textContent = 'Generando versión mejorada…';
-    enhancedBlob = await enhanceImageFile(file);
+    const enhancedBlob = await enhanceImageFile(file);
+    const { error: errMejorada } = await sb.storage.from('pacientes-fotos').upload(mejoradaPath, enhancedBlob, { upsert: true, contentType: 'image/jpeg' });
+    if(errMejorada) throw errMejorada;
     entry.mejorada = mejoradaPath;
     entry.previewMejorada = URL.createObjectURL(enhancedBlob);
     entry.view = 'mejorada';
-    await cachePhotoBlob(mejoradaPath, enhancedBlob);
-    await cachePhotoBlob(originalPath, file);
+    cachePhotoBlob(mejoradaPath, enhancedBlob);
     renderPhotoStrip(fieldKey);
+    if(statusEl) statusEl.textContent = '✓ Foto guardada (original y versión mejorada).';
   } catch(e){
-    await cachePhotoBlob(originalPath, file);
-    if(statusEl) statusEl.textContent = '✓ Original guardado; no se pudo generar la mejora.';
+    if(statusEl) statusEl.textContent = '✓ Foto original guardada (no se pudo generar la versión mejorada; el original sigue disponible).';
   }
-
-  if(!isOnline()){
-    await idbAdd('pending_media', {
-      kind:'photo', ownerId:currentPhotoOwnerId, fieldKey,
-      originalPath, mejoradaPath: enhancedBlob ? mejoradaPath : null,
-      originalBlob:file, enhancedBlob
-    });
-    if(statusEl) statusEl.textContent = enhancedBlob
-      ? '🟠 Sin conexión — original y versión mejorada guardadas en este teléfono; se subirán al recuperar internet.'
-      : '🟠 Sin conexión — foto guardada en este teléfono; se subirá al recuperar internet.';
-    return;
-  }
-
-  if(statusEl) statusEl.textContent = 'Subiendo foto original…';
-  const { error: errOriginal } = await sb.storage.from('pacientes-fotos').upload(originalPath, file, { upsert:true });
-  if(errOriginal){
-    // Si la red falla durante la subida, no perdemos la foto: pasa a la cola offline.
-    await idbAdd('pending_media', {
-      kind:'photo', ownerId:currentPhotoOwnerId, fieldKey,
-      originalPath, mejoradaPath: enhancedBlob ? mejoradaPath : null,
-      originalBlob:file, enhancedBlob
-    });
-    if(statusEl) statusEl.textContent = '🟠 Conexión inestable — foto guardada localmente y pendiente de sincronización.';
-    return;
-  }
-  if(enhancedBlob){
-    const { error: errMejorada } = await sb.storage.from('pacientes-fotos').upload(mejoradaPath, enhancedBlob, { upsert:true, contentType:'image/jpeg' });
-    if(errMejorada){
-      await idbAdd('pending_media', { kind:'photo', ownerId:currentPhotoOwnerId, fieldKey, originalPath, mejoradaPath, originalBlob:file, enhancedBlob });
-      if(statusEl) statusEl.textContent = '✓ Original guardado; versión mejorada pendiente de sincronización.';
-      return;
-    }
-  }
-  if(statusEl) statusEl.textContent = enhancedBlob ? '✓ Foto guardada (original y versión mejorada).' : '✓ Foto original guardada.';
 }
 
 document.getElementById('f_comorbilidadSelect').addEventListener('change',e=>{ const v=e.target.value; if(!v)return; if(!comorbilidadesDetalle.some(x=>x.enfermedad===v)) comorbilidadesDetalle.push({enfermedad:v,tratamiento:''}); e.target.value=''; renderComorbilidades(); });
@@ -1555,31 +1475,7 @@ document.getElementById('f_opTipo').addEventListener('change',e=>{document.getEl
 document.getElementById('addOperacionBtn').addEventListener('click',()=>{const op=getCurrentOperacion();if(!op){alert('Selecciona el tipo y la operación previa.');return;}operacionesPreviasDetalle.push(op);renderOperaciones();});
 document.getElementById('ecg_photo').addEventListener('change',e=>handleEcgFile(e.target.files?.[0],'image'));
 document.getElementById('ecg_video').addEventListener('change',e=>handleEcgFile(e.target.files?.[0],'video'));
-async function handleEcgFile(file,type){
-  if(!file) return;
-  const owner = currentPhotoOwnerId || ('local-'+crypto.randomUUID());
-  currentPhotoOwnerId = owner;
-  const ext=(file.name.split('.').pop()|| (type==='video'?'mp4':'jpg')).replace(/[^a-zA-Z0-9]/g,'');
-  const path=`${owner}/electrocardiograma/${type}-${Date.now()}.${ext}`;
-  await cachePhotoBlob(path,file);
-  ecgMedia.push({path,type,preview:URL.createObjectURL(file),name:file.name});
-  renderEcgMedia();
-  if(!isOnline()){
-    await idbAdd('pending_media',{kind:'ecg',ownerId:owner,path,blob:file});
-    document.getElementById('ecg_status').textContent='🟠 Sin conexión — ECG guardado en este teléfono; se subirá al recuperar internet.';
-    document.getElementById(type==='image'?'ecg_photo':'ecg_video').value='';
-    return;
-  }
-  document.getElementById('ecg_status').textContent='Subiendo ECG…';
-  const {error}=await sb.storage.from('pacientes-fotos').upload(path,file,{upsert:true,contentType:file.type||undefined});
-  if(error){
-    await idbAdd('pending_media',{kind:'ecg',ownerId:owner,path,blob:file});
-    document.getElementById('ecg_status').textContent='🟠 Conexión inestable — ECG guardado localmente y pendiente de sincronización.';
-  } else {
-    document.getElementById('ecg_status').textContent='✓ ECG guardado.';
-  }
-  document.getElementById(type==='image'?'ecg_photo':'ecg_video').value='';
-}
+async function handleEcgFile(file,type){if(!file)return;if(!isOnline()){document.getElementById('ecg_status').textContent='Sin conexión: el ECG multimedia requiere conexión para guardarse en el servidor.';return;}const owner=currentPhotoOwnerId || ('local-'+crypto.randomUUID());currentPhotoOwnerId=owner;const ext=(file.name.split('.').pop()|| (type==='video'?'mp4':'jpg')).replace(/[^a-zA-Z0-9]/g,'');const path=`${owner}/electrocardiograma/${type}-${Date.now()}.${ext}`;document.getElementById('ecg_status').textContent='Subiendo ECG…';const {error}=await sb.storage.from('pacientes-fotos').upload(path,file,{upsert:true,contentType:file.type||undefined});if(error){document.getElementById('ecg_status').textContent='No se pudo subir el ECG: '+error.message;return;}cachePhotoBlob(path,file);ecgMedia.push({path,type,preview:URL.createObjectURL(file),name:file.name});renderEcgMedia();document.getElementById('ecg_status').textContent='✓ ECG guardado.';document.getElementById(type==='image'?'ecg_photo':'ecg_video').value='';}
 
 const listEl = document.getElementById('patientList');
 const emptyEl = document.getElementById('emptyState');
@@ -1621,7 +1517,6 @@ function getStoredSupabaseSession(){
 }
 
 async function checkSession(){
-  await requestPersistentStorage();
   let session = null;
   try{
     const result = await sb.auth.getSession();
@@ -1759,7 +1654,6 @@ function rowToPatient(r){
       informeOperatorio: r.informe_operatorio_fotos || [],
       biopsias: r.biopsias_fotos || [],
       electrocardiograma: r.electrocardiograma_media || [],
-      consentimientoInformado: r.consentimiento_informado_fotos || [],
     },
   };
 }
@@ -1783,11 +1677,17 @@ function patientToRow(p){
     asa: p.asa || null,
     sintomas: p.sintomas || null,
     signos: p.signos || null,
+    complementarios_urgencia: p.compUrg || null,
+    complementarios_electivos: p.compElec || null,
+    complementarios_imagen: p.compImagen || null,
+    valoraciones_especialidades: p.valoraciones || null,
+    chequeo_anestesico: p.chequeoAnestesico || null,
     comorbilidades: p.comorbilidades || null,
     comorbilidades_detalle: p.comorbilidadesDetalle || [],
     transfusion_previa: !!p.transfusionPrevia,
     reaccion_transfusion: !!p.reaccionTransfusion,
     reaccion_transfusion_detalle: p.reaccionTransfusionDetalle || null,
+    alergias: Array.isArray(p.alergiasDetalle) && p.alergiasDetalle.length > 0,
     alergias_detalle: p.alergiasDetalle || [],
     operaciones_previas: !!p.operacionesPrevias,
     operaciones_previas_detalle: p.operacionesPreviasDetalle || [],
@@ -1818,7 +1718,6 @@ function patientToRow(p){
     informe_operatorio_fotos: (p.fotos?.informeOperatorio || []).map(f => ({ original: f.original, mejorada: f.mejorada || null })),
     biopsias_fotos: (p.fotos?.biopsias || []).map(f => ({ original: f.original, mejorada: f.mejorada || null })),
     electrocardiograma_media: (p.fotos?.electrocardiograma || []).map(f => ({ path: f.path, type: f.type, name: f.name || null })),
-    consentimiento_informado_fotos: (p.fotos?.consentimientoInformado || []).map(f => ({ original: f.original, mejorada: f.mejorada || null })),
   };
 }
 
@@ -2005,10 +1904,6 @@ function render(){
             ${photoThumbsReadOnly(p.fotosPaths?.valoraciones)}
             ${field('Chequeo anestésico', p.chequeoAnestesico)}
             ${photoThumbsReadOnly(p.fotosPaths?.chequeoAnestesico)}
-          </div>
-          <div class="detail-section">
-            <h4>Consentimiento Informado</h4>
-            ${photoThumbsReadOnly(p.fotosPaths?.consentimientoInformado)}
           </div>
           <div class="detail-section">
             <h4>Comorbilidades</h4>
@@ -2210,7 +2105,7 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
   }
   // Sin conexión (o falló el guardado en línea): guardar local y encolar
   const isLocalOnly = editingId && editingId.startsWith('local-');
-  const localId = editingId || currentPhotoOwnerId || ('local-' + crypto.randomUUID());
+  const localId = editingId || ('local-' + crypto.randomUUID());
   await idbPut('pacientes', { ...row, id: localId, created_at: new Date().toISOString() });
 
   if(isLocalOnly){
